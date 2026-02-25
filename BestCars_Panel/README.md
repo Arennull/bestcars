@@ -1,117 +1,91 @@
-# BestCars Ibérica — Panel de control (Vite + React)
+# BestCars Ibérica — Panel de administración
 
-Panel interno para gestionar **Stock**, **Leads**, **Estadísticas**, **Registro de actividad** y **Vista Web**.
+Panel interno para gestionar **Stock**, **Leads**, **Estadísticas** y **Editor de escenas** (composición del garaje en la web).
 
-## Requisitos
+- **Tecnología:** Vite + React
+- **Requisitos:** Node.js 18+ (recomendado 20 LTS), npm
 
-- Node.js 18+ (recomendado 20 LTS)
-- npm (incluido con Node)
+---
 
 ## Arranque rápido
 
 ```bash
-npm ci
+npm install
 npm run dev
 ```
 
-Luego abre la URL que te indique Vite.
+Abre la URL que muestre Vite (p. ej. http://localhost:5173).
+
+---
+
+## Modo demo vs modo API
+
+| Configuración | Comportamiento |
+|---------------|----------------|
+| **Sin `VITE_API_URL`** | Modo demo: datos locales en `localStorage`. No hace falta backend. |
+| **Con `VITE_API_URL`** | Modo API: login contra el backend, vehículos/leads/escenas desde la API. |
+
+### Variables de entorno
+
+Crear `.env` en la raíz (o copiar desde `.env.example`):
+
+```env
+# Desarrollo
+VITE_API_URL=http://localhost:3001
+
+# Producción (sustituir por tu URL del API)
+# VITE_API_URL=https://api.tudominio.com
+```
+
+Ver `.env.production.example` para despliegue.
+
+---
+
+## Credenciales del panel
+
+Cuando el panel está en **modo API**, el login se valida contra el backend:
+
+- **Usuario / contraseña por defecto (Bestcars_Back_DEF):** `admin` / `admin`
+- En producción deben configurarse en el backend (`ADMIN_USERNAME`, `ADMIN_PASSWORD`); no usar `admin`/`admin` en producción.
+
+---
+
+## Build y despliegue
+
+```bash
+npm run build
+```
+
+La carpeta **`dist/`** se puede servir con cualquier servidor estático (Nginx, Vercel, Netlify, etc.).
+
+```bash
+npm run serve
+```
+
+Sirve `dist/` en local (p. ej. puerto 5174) para probar el build.
+
+---
 
 ## Estructura del proyecto
 
-- `src/main.tsx`: entrypoint.
-- `src/app/App.tsx`: orquestación del panel (estado principal, navegación y modales).
-- `src/app/components/*`: componentes de UI y secciones.
-- `src/app/data/mock-data.ts`: tipos + datos de ejemplo.
+| Ruta | Descripción |
+|------|-------------|
+| `src/main.tsx` | Punto de entrada |
+| `src/app/App.tsx` | Orquestación, rutas y modales |
+| `src/app/components/*` | Secciones (Stock, Leads, Estadísticas, Escenas, etc.) |
+| `src/app/data/mock-data.ts` | Tipos y datos de ejemplo |
+| `src/app/hooks/use-local-storage-state.ts` | Persistencia en `localStorage` (modo demo) |
+| `src/contexts/AuthContext.tsx` | Autenticación (modo API) |
+| `src/services/api.ts` | Cliente HTTP contra el backend |
+| `src/adapters/*` | Transformación API ↔ formato del panel |
 
-## Persistencia
+---
 
-Los datos se guardan en `localStorage` mediante el hook:
+## Funcionalidades principales
 
-- `src/app/hooks/use-local-storage-state.ts`
+- **Stock:** listado, edición y orden de vehículos (con API o demo).
+- **Leads:** contactos y solicitudes de prueba de manejo.
+- **Estadísticas:** vistas y métricas.
+- **Escenas:** editor visual para posicionar vehículos en el garaje; vista previa en vivo (iframe). Con API, las escenas se guardan en el backend; con Bestcars_Back_DEF solo lectura (lista vacía).
 
-Ejecución en desarrollo:
-
-npm run dev
-
-Vite mostrará en consola la URL local (por defecto http://localhost:5173).
-
-Estructura del proyecto
-
-src/main.tsx: punto de entrada.
-
-src/app/App.tsx: orquestación principal (estado, navegación y modales).
-
-src/app/components/*: componentes de UI y secciones.
-
-src/app/data/mock-data.ts: tipos y datos de ejemplo.
-
-src/app/hooks/use-local-storage-state.ts: persistencia en localStorage.
-
-Persistencia
-
-Los datos se guardan en localStorage mediante el hook:
-
-src/app/hooks/use-local-storage-state.ts
-
-De este modo, los cambios se mantienen aunque se recargue la página.
-
-Funcionalidades principales
-Stock / Leads / Estadísticas
-
-Secciones operativas del panel para la gestión y seguimiento interno.
-
-Escenas (Editor Visual)
-
-Se incorpora una nueva sección “Escenas” orientada a la edición visual y previsualización en vivo.
-
-Incluye:
-
-Creación de escenas desde cero:
-
-Nombre de la escena
-
-URL de fondo
-
-Selector de escenas
-
-Selector de posiciones:
-
-Parking 1, Parking 2, Parking 3, Parking 4
-
-Rampa
-
-Gestión por posición:
-
-Vehículo asignado
-
-Transformación: x, y, escala, rotación
-
-Indicadores de estado: ocupada / vacía
-
-Acciones: Guardar / Restablecer por posición
-
-Gestión por escena:
-
-Guardar / Restablecer fondo por escena
-
-Vista web embebida (iframe) y sincronización en vivo
-
-Integración de la vista web dentro del panel mediante iframe.
-
-Sincronización en vivo mediante postMessage para reflejar cambios del editor en tiempo real.
-
-Cambios relevantes (ZIP)
-
-Nueva sección en el menú: “Escenas” (Editor Visual).
-
-Eliminación total del apartado de logs:
-
-Eliminado del menú.
-
-Eliminado de App.tsx.
-
-Eliminados ActivityLog y mockActivityLogs del mock.
-
-Eliminado activity-logs-section.tsx.
-
-Implementación del editor de escenas y sincronización en vivo mediante iframe + postMessage.
+Los datos en modo demo se guardan en `localStorage` y persisten al recargar.
