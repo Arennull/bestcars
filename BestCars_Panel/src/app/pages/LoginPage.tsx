@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "motion/react";
-import { Car, Lock, User } from "lucide-react";
+import { Car, Eye, EyeOff, Lock, User } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "../../contexts/AuthContext";
 
@@ -8,6 +8,7 @@ export function LoginPage() {
   const { login } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -21,7 +22,13 @@ export function LoginPage() {
       await login(username.trim(), password);
       toast.success("Sesión iniciada correctamente");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Error al iniciar sesión");
+      const msg = err instanceof Error ? err.message : "Error al iniciar sesión";
+      const isInvalidCreds = /invalid|credenciales|401/i.test(msg);
+      toast.error(
+        isInvalidCreds
+          ? "Usuario o contraseña incorrectos. Por defecto: admin / admin. En Railway configura ADMIN_PASSWORD en el backend."
+          : msg
+      );
     } finally {
       setLoading(false);
     }
@@ -46,32 +53,42 @@ export function LoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-sm text-white/70 mb-2">Usuario</label>
+            <label htmlFor="login-username" className="block text-sm text-white/70 mb-2">Usuario</label>
             <div className="relative">
-              <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" />
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40 pointer-events-none" />
               <input
+                id="login-username"
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="admin"
-                className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-white/20"
+                className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-white/20 relative z-10"
                 autoComplete="username"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm text-white/70 mb-2">Contraseña</label>
+            <label htmlFor="login-password" className="block text-sm text-white/70 mb-2">Contraseña</label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" />
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40 pointer-events-none" />
               <input
-                type="password"
+                id="login-password"
+                type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-white/20"
+                className="w-full pl-10 pr-12 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-white/20 relative z-10"
                 autoComplete="current-password"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword((p) => !p)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-white/80 p-1 rounded"
+                title={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+              >
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
             </div>
           </div>
 

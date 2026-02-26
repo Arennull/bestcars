@@ -1,14 +1,28 @@
 /**
  * Controlador de vehículos
- * Usa Prisma + Supabase si DATABASE_URL está configurada, sino datos mock
+ * Usa Prisma + Supabase si DATABASE_URL está configurada, sino datos mock en memoria
  */
 
 import { type Request, type Response } from 'express';
 import type { Prisma } from '@prisma/client';
 import { prisma } from '../config/database.js';
-import { mockVehicles } from '../data/mockVehicles.js';
+import { mockVehicles, type MockVehicle } from '../data/mockVehicles.js';
 
 const useDatabase = Boolean(process.env.DATABASE_URL);
+
+/** Copia mutable para modo MOCK: create/update/delete sin DATABASE_URL */
+function getInMemoryVehicles(): MockVehicle[] {
+  const key = '__inMemoryVehicles';
+  const g = globalThis as { [k: string]: MockVehicle[] };
+  if (!g[key]) {
+    g[key] = JSON.parse(JSON.stringify(mockVehicles)).map((v: MockVehicle & { createdAt: string; updatedAt: string }) => ({
+      ...v,
+      createdAt: new Date(v.createdAt),
+      updatedAt: new Date(v.updatedAt),
+    }));
+  }
+  return g[key];
+}
 
 interface VehicleCreateBody {
   title: string;
@@ -119,7 +133,7 @@ export const getAllVehicles = async (_req: Request, res: Response): Promise<void
       return;
     }
     res.json(
-      mockVehicles.map((v) => ({
+      getInMemoryVehicles().map((v) => ({
         ...v,
         createdAt: v.createdAt.toISOString(),
         updatedAt: v.updatedAt.toISOString(),
@@ -207,7 +221,7 @@ export const getVehicleById = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    const vehicle = mockVehicles.find((v) => v.id === id);
+    const vehicle = getInMemoryVehicles().find((v) => v.id === id);
     if (!vehicle) {
       res.status(404).json({ error: 'Vehicle not found' });
       return;
@@ -224,30 +238,54 @@ export const getVehicleById = async (req: Request, res: Response): Promise<void>
 };
 
 /**
- * POST /api/vehicles - Crear vehículo. Requiere auth y DATABASE_URL.
+ * POST /api/vehicles - Crear vehículo. Requiere auth. Con DATABASE_URL persiste en DB; sin ella usa memoria.
  */
 export const createVehicle = async (
   req: Request<object, object, VehicleCreateBody>,
   res: Response
 ): Promise<void> => {
-  if (!useDatabase) {
-    res.status(501).json({ error: 'Create vehicle requires DATABASE_URL' });
+  const body = req.body ?? {};
+  const title = String(body.title ?? '').trim();
+  const year = Number(body.year);
+  const mileage = String(body.mileage ?? '').trim();
+  const price = String(body.price ?? '').trim();
+  if (!title || !mileage || !price) {
+    res.status(400).json({ error: 'title, mileage and price are required' });
     return;
   }
+  if (Number.isNaN(year) || year < 1900 || year > 2100) {
+    res.status(400).json({ error: 'year must be a valid number between 1900 and 2100' });
+    return;
+  }
+
+  if (!useDatabase) {
+    const now = new Date();
+    const newVehicle: MockVehicle = {
+      id: generateVehicleId(),
+      title,
+      year,
+      mileage,
+      price,
+      priceSubtext: body.priceSubtext?.trim() || undefined,
+      fuelType: body.fuelType?.trim() || undefined,
+      seats: body.seats?.trim() || undefined,
+      description: body.description?.trim() || undefined,
+      images: Array.isArray(body.images) ? body.images : [],
+      tags: Array.isArray(body.tags) ? body.tags : [],
+      specifications: (body.specifications as MockVehicle['specifications']) ?? { general: [], motor: [], seguridad: [], tecnologia: [] },
+      createdAt: now,
+      updatedAt: now,
+    };
+    getInMemoryVehicles().unshift(newVehicle);
+    res.status(201).json({
+      ...newVehicle,
+      createdAt: newVehicle.createdAt.toISOString(),
+      updatedAt: newVehicle.updatedAt.toISOString(),
+    });
+    return;
+  }
+
   try {
-    const body = req.body ?? {};
-    const title = String(body.title ?? '').trim();
-    const year = Number(body.year);
-    const mileage = String(body.mileage ?? '').trim();
-    const price = String(body.price ?? '').trim();
-    if (!title || !mileage || !price) {
-      res.status(400).json({ error: 'title, mileage and price are required' });
-      return;
-    }
-    if (Number.isNaN(year) || year < 1900 || year > 2100) {
-      res.status(400).json({ error: 'year must be a valid number between 1900 and 2100' });
-      return;
-    }
     const vehicle = await prisma.vehicle.create({
       data: {
         id: generateVehicleId(),
@@ -272,47 +310,63 @@ export const createVehicle = async (
 };
 
 /**
- * PATCH /api/vehicles/:id - Actualizar vehículo. Requiere auth y DATABASE_URL.
+ * PATCH /api/vehicles/:id - Actualizar vehículo. Requiere auth. Con DATABASE_URL persiste en DB; sin ella usa memoria.
  */
 export const updateVehicle = async (req: Request, res: Response): Promise<void> => {
+  const { id } = req.params;
+  const body = req.body ?? {};
+  const data: Partial<MockVehicle> = {};
+  if (body.title !== undefined) data.title = String(body.title).trim();
+  if (body.year !== undefined) {
+    const y = Number(body.year);
+    if (!Number.isNaN(y) && y >= 1900 && y <= 2100) data.year = y;
+  }
+  if (body.mileage !== undefined) data.mileage = String(body.mileage).trim();
+  if (body.price !== undefined) data.price = String(body.price).trim();
+  if (body.priceSubtext !== undefined) data.priceSubtext = body.priceSubtext?.trim() || undefined;
+  if (body.fuelType !== undefined) data.fuelType = body.fuelType?.trim() || undefined;
+  if (body.seats !== undefined) data.seats = body.seats?.trim() || undefined;
+  if (body.description !== undefined) data.description = body.description?.trim() || undefined;
+  if (body.images !== undefined) data.images = Array.isArray(body.images) ? body.images : [];
+  if (body.tags !== undefined) data.tags = Array.isArray(body.tags) ? body.tags : [];
+  if (body.specifications !== undefined) data.specifications = body.specifications as MockVehicle['specifications'];
+
   if (!useDatabase) {
-    res.status(501).json({ error: 'Update vehicle requires DATABASE_URL' });
+    const list = getInMemoryVehicles();
+    const idx = list.findIndex((v) => v.id === id);
+    if (idx === -1) {
+      res.status(404).json({ error: 'Vehicle not found' });
+      return;
+    }
+    const now = new Date();
+    const cleanData = Object.fromEntries(Object.entries(data).filter(([, v]) => v !== undefined)) as Partial<MockVehicle>;
+    const updated: MockVehicle = { ...list[idx], ...cleanData, updatedAt: now };
+    list[idx] = updated;
+    res.json({
+      ...updated,
+      createdAt: updated.createdAt.toISOString(),
+      updatedAt: updated.updatedAt.toISOString(),
+    });
     return;
   }
-  try {
-    const { id } = req.params;
-    const body = req.body ?? {};
-    const data: {
-      title?: string;
-      year?: number;
-      mileage?: string;
-      price?: string;
-      priceSubtext?: string | null;
-      fuelType?: string | null;
-      seats?: string | null;
-      description?: string | null;
-      images?: string[];
-      tags?: string[];
-      specifications?: unknown;
-    } = {};
-    if (body.title !== undefined) data.title = String(body.title).trim();
-    if (body.year !== undefined) {
-      const y = Number(body.year);
-      if (!Number.isNaN(y) && y >= 1900 && y <= 2100) data.year = y;
-    }
-    if (body.mileage !== undefined) data.mileage = String(body.mileage).trim();
-    if (body.price !== undefined) data.price = String(body.price).trim();
-    if (body.priceSubtext !== undefined) data.priceSubtext = body.priceSubtext?.trim() || null;
-    if (body.fuelType !== undefined) data.fuelType = body.fuelType?.trim() || null;
-    if (body.seats !== undefined) data.seats = body.seats?.trim() || null;
-    if (body.description !== undefined) data.description = body.description?.trim() || null;
-    if (body.images !== undefined) data.images = Array.isArray(body.images) ? body.images : [];
-    if (body.tags !== undefined) data.tags = Array.isArray(body.tags) ? body.tags : [];
-    if (body.specifications !== undefined) data.specifications = body.specifications as object;
 
+  try {
+    const updatePayload: Prisma.VehicleUpdateInput = {
+      ...(data.title !== undefined && { title: data.title }),
+      ...(data.year !== undefined && { year: data.year }),
+      ...(data.mileage !== undefined && { mileage: data.mileage }),
+      ...(data.price !== undefined && { price: data.price }),
+      ...(data.priceSubtext !== undefined && { priceSubtext: data.priceSubtext }),
+      ...(data.fuelType !== undefined && { fuelType: data.fuelType }),
+      ...(data.seats !== undefined && { seats: data.seats }),
+      ...(data.description !== undefined && { description: data.description }),
+      ...(data.images !== undefined && { images: data.images }),
+      ...(data.tags !== undefined && { tags: data.tags }),
+      ...(data.specifications !== undefined && { specifications: data.specifications }),
+    };
     const vehicle = await prisma.vehicle.update({
       where: { id },
-      data: data as Prisma.VehicleUpdateInput,
+      data: updatePayload,
     });
     res.json(formatVehicle(vehicle));
   } catch (error) {
@@ -326,15 +380,24 @@ export const updateVehicle = async (req: Request, res: Response): Promise<void> 
 };
 
 /**
- * DELETE /api/vehicles/:id - Eliminar vehículo. Requiere auth y DATABASE_URL.
+ * DELETE /api/vehicles/:id - Eliminar vehículo. Requiere auth. Con DATABASE_URL persiste en DB; sin ella usa memoria.
  */
 export const deleteVehicle = async (req: Request, res: Response): Promise<void> => {
+  const { id } = req.params;
+
   if (!useDatabase) {
-    res.status(501).json({ error: 'Delete vehicle requires DATABASE_URL' });
+    const list = getInMemoryVehicles();
+    const idx = list.findIndex((v) => v.id === id);
+    if (idx === -1) {
+      res.status(404).json({ error: 'Vehicle not found' });
+      return;
+    }
+    list.splice(idx, 1);
+    res.status(204).send();
     return;
   }
+
   try {
-    const { id } = req.params;
     await prisma.vehicle.delete({ where: { id } });
     res.status(204).send();
   } catch (error) {
