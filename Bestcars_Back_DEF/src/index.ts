@@ -7,12 +7,12 @@ import 'dotenv/config';
 import app from './config/app.js';
 import { prisma } from './config/database.js';
 
-const PORT = process.env.PORT || 3001;
+const PORT = Number(process.env.PORT) || 3001;
 const useDatabase = Boolean(process.env.DATABASE_URL);
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-  console.log(`📊 API: http://localhost:${PORT}/api`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Server running on 0.0.0.0:${PORT}`);
+  console.log(`📊 API: /api`);
   console.log(useDatabase ? '✅ Database connected (PostgreSQL)' : '⚠️  MOCK mode (no DATABASE_URL)');
 });
 

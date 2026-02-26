@@ -175,6 +175,12 @@ Ajustar en cada `.env` local: `VITE_API_URL=http://localhost:3001` y `CORS_ORIGI
 | **Panel**  | Mismo que la web (otra carpeta/subdominio) o Vercel/Netlify |
 | **BD**     | Supabase (ya contemplado en Back-updated) |
 
+### 6.1 Railway (API + Web + Panel)
+
+- **Backend (Bestcars_Back_DEF):** El servidor ya escucha en `0.0.0.0` y usa `Number(PORT)` para que Railway pueda enrutar el tráfico. Comando: `npm run build && npm start`.
+- **Web (Bestcars_front_DEF):** El script `start` usa `serve -s dist -l tcp://0.0.0.0:${PORT:-5173}`: `-s` para SPA (rutas como `/garage`, `/vehicle/:id` sin 404 al refrescar). Railway inyecta `PORT`; en local se usa 5173.
+- **Panel (BestCars_Panel):** Igual con `serve -s dist -l tcp://0.0.0.0:${PORT:-5174}`. En Railway no hace falta Start Command extra; con `npm start` basta.
+
 ---
 
 ## 7. Archivos de referencia

@@ -7,8 +7,8 @@
     "build": "vite build",
     "dev": "vite",
     "preview": "vite preview --port 5174",
-    "serve": "npx serve dist -p 5174",
-    "start": "npx serve dist"
+    "serve": "npx serve -s dist -p 5174",
+    "start": "npx serve -s dist -l tcp://0.0.0.0:${PORT:-5174}"
   },
   "dependencies": {
     "@radix-ui/react-accordion": "1.2.3",
