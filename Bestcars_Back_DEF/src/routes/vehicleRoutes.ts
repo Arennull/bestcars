@@ -43,9 +43,9 @@ router.get('/images/:filename', (req: Request, res: Response) => {
       res.status(404).end();
       return;
     }
-    // CORS explícito para que el panel (origen distinto) pueda cargar las imágenes
+    // CORS obligatorio para <img> cross-origin: si falta, el navegador muestra alt en vez de la imagen
     const origin = req.get('Origin');
-    if (origin) res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Origin', origin || '*');
     res.sendFile(filepath, (err) => {
       if (err && !res.headersSent) res.status(500).end();
     });

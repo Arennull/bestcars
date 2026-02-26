@@ -53,7 +53,7 @@ export function HomePage() {
           alt="Luxurious modern house with architectural lighting" 
           className={`home-image ${allImagesLoaded ? 'loaded' : ''}`}
           loading="eager"
-          fetchPriority="high"
+          fetchpriority="high"
           decoding="async"
           onLoad={() => setHouseImageLoaded(true)}
           onError={() => {

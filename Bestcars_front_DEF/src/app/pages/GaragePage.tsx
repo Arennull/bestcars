@@ -112,7 +112,7 @@ export default function GaragePage() {
               alt="Garage with luxury cars"
               className={`garage-image ${garageImageLoaded ? "loaded" : ""}`}
               loading="eager"
-              fetchPriority="high"
+              fetchpriority="high"
               decoding="async"
               onLoad={() => setGarageImageLoaded(true)}
               onError={() => {
@@ -125,7 +125,7 @@ export default function GaragePage() {
               alt="BEST CARS IBERICA Logo"
               className={`garage-logo ${logoImageLoaded ? "loaded" : ""}`}
               loading="eager"
-              fetchPriority="high"
+              fetchpriority="high"
               decoding="async"
               onLoad={() => setLogoImageLoaded(true)}
               onError={() => {
