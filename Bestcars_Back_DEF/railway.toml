@@ -1,0 +1,10 @@
+# Railway: usa Nixpacks (npm) en lugar de Railpack (bun)
+# Root Directory del servicio debe ser: Bestcars_Back_DEF
+
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "npm start"
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3
