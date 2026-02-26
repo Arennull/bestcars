@@ -34,6 +34,7 @@ export default function App() {
     handlePriceUpdate,
     handleLeadUpdate,
     handleSaveNewVehicle,
+    handleVehicleDelete,
   } = usePanelData(apiMode, !!token);
 
   const [activeSection, setActiveSection] = useState<SectionId>("stock");
@@ -60,6 +61,14 @@ export default function App() {
   const handleCloseDetail = useCallback(() => {
     setSelectedVehicle(null);
   }, []);
+
+  const handleVehicleDeleteAndClose = useCallback(
+    async (vehicleId: string) => {
+      await handleVehicleDelete(vehicleId);
+      setSelectedVehicle(null);
+    },
+    [handleVehicleDelete]
+  );
 
   const handleCreateVehicle = useCallback(() => {
     setIsCreateModalOpen(true);
@@ -179,6 +188,7 @@ export default function App() {
             onClose={handleCloseDetail}
             onUpdate={handleVehicleUpdateWithSync}
             onWebPreview={handleWebPreview}
+            onDelete={handleVehicleDeleteAndClose}
           />
         )}
       </AnimatePresence>

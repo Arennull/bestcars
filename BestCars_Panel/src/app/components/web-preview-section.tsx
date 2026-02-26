@@ -10,12 +10,16 @@ import {
   Settings, MapPin, Mail, Menu, Search, Filter,
   ChevronRight, Zap, Shield, Award, Star,
   Facebook, Instagram, Twitter, Linkedin,
-  Globe, Monitor,
+  Globe, Monitor, RefreshCw,
 } from "lucide-react";
 import { Vehicle } from "../data/mock-data";
+import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { useLocalStorageState } from "../hooks/use-local-storage-state";
 
-const DEFAULT_WEB_PREVIEW_URL = "https://bcarsiberica.com/";
+// URL de la web para ver cambios en vivo (local o producción)
+const DEFAULT_WEB_PREVIEW_URL =
+  (typeof import.meta !== "undefined" && (import.meta as { env?: { VITE_WEB_PREVIEW_URL?: string } }).env?.VITE_WEB_PREVIEW_URL) ||
+  "http://localhost:5173";
 
 interface WebPreviewSectionProps {
   vehicles: Vehicle[];
@@ -25,12 +29,17 @@ interface WebPreviewSectionProps {
 export function WebPreviewSection({ vehicles, onVehiclePreview }: WebPreviewSectionProps) {
   const [filterType, setFilterType] = useState<"all" | "disponible" | "premium">("all");
   const [sortBy, setSortBy] = useState<"recent" | "price-low" | "price-high">("recent");
-  const [previewMode, setPreviewMode] = useState<"simulada" | "real">("simulada");
+  const [previewMode, setPreviewMode] = useState<"simulada" | "real">("real");
   const [previewUrl, setPreviewUrl] = useLocalStorageState(
     "bestcars_web_preview_url",
     DEFAULT_WEB_PREVIEW_URL
   );
+  const [iframeKey, setIframeKey] = useState(0);
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
+
+  const refreshIframe = () => {
+    setIframeKey((k) => k + 1);
+  };
 
   const availableVehicles = useMemo(
     () => vehicles.filter((v) => v.status === "disponible"),
@@ -138,7 +147,7 @@ export function WebPreviewSection({ vehicles, onVehiclePreview }: WebPreviewSect
                 className="flex-1 min-w-[280px] px-4 py-2 rounded-xl bg-white/[0.03] border border-white/10 text-white/90 placeholder:text-white/30 focus:outline-none focus:border-blue-500/50 text-sm"
               />
               <span className="text-xs text-white/40 max-w-xs">
-                Introduce la URL de tu web. Debe escuchar postMessage con tipo BESTCARS_WEB_PREVIEW_VEHICLES
+                URL de la web (ej. http://localhost:5173 en local). Usa &quot;Actualizar vista&quot; tras cambiar datos para ver los cambios.
               </span>
             </div>
           )}
@@ -196,17 +205,29 @@ export function WebPreviewSection({ vehicles, onVehiclePreview }: WebPreviewSect
                 <Globe className="w-4 h-4" />
                 {effectiveUrl}
               </span>
-              <a
-                href={effectiveUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 text-xs transition-colors"
-              >
-                Abrir en nueva pestaña
-              </a>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={refreshIframe}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 text-xs transition-colors"
+                  title="Actualizar vista para ver los últimos cambios"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  Actualizar vista
+                </button>
+                <a
+                  href={effectiveUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 text-xs transition-colors"
+                >
+                  Abrir en nueva pestaña
+                </a>
+              </div>
             </div>
             <div className="flex-1 min-h-0 overflow-hidden">
               <iframe
+                key={iframeKey}
                 ref={iframeRef}
                 src={effectiveUrl}
                 title="Vista previa de la web enlazada"
@@ -374,7 +395,7 @@ export function WebPreviewSection({ vehicles, onVehiclePreview }: WebPreviewSect
                     <Filter className="w-4 h-4 text-gray-600" />
                     <select
                       value={filterType}
-                      onChange={(e) => setFilterType(e.target.value as any)}
+                      onChange={(e) => setFilterType(e.target.value as "all" | "disponible" | "premium")}
                       className="text-sm text-gray-700 bg-transparent border-none outline-none cursor-pointer"
                     >
                       <option value="all">Todos ({vehicles.length})</option>
@@ -387,7 +408,7 @@ export function WebPreviewSection({ vehicles, onVehiclePreview }: WebPreviewSect
                     <Settings className="w-4 h-4 text-gray-600" />
                     <select
                       value={sortBy}
-                      onChange={(e) => setSortBy(e.target.value as any)}
+                      onChange={(e) => setSortBy(e.target.value as "recent" | "price-low" | "price-high")}
                       className="text-sm text-gray-700 bg-transparent border-none outline-none cursor-pointer"
                     >
                       <option value="recent">Más recientes</option>
@@ -429,7 +450,7 @@ export function WebPreviewSection({ vehicles, onVehiclePreview }: WebPreviewSect
                     >
                       {/* Image */}
                       <div className="relative h-64 overflow-hidden bg-gray-100">
-                        <img
+                        <ImageWithFallback
                           src={vehicle.image}
                           alt={vehicle.name}
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"

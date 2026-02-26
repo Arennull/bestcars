@@ -3,9 +3,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronRight } from 'lucide-react';
-import { api } from '../../services/api.js';
-import { mapImageUrls } from '../../utils/imageMap.js';
-import type { Vehicle } from '../../types/vehicle.ts';
+import { api, getVehicleImageUrl } from '../../services/api.js';
+import type { Vehicle } from '../../types/vehicle.js';
 
 interface StockMenuProps {
   isOpen?: boolean;
@@ -39,8 +38,7 @@ export function StockMenu({ isOpen: isOpenProp, onOpenChange, hideButton = false
           setLoading(true);
           const data = await api.getAllVehicles();
           setVehicles(data);
-        } catch (error) {
-          console.error('Error fetching vehicles:', error);
+        } catch {
           setVehicles([]);
         } finally {
           setLoading(false);
@@ -57,8 +55,7 @@ export function StockMenu({ isOpen: isOpenProp, onOpenChange, hideButton = false
 
   const getThumbnail = (vehicle: Vehicle): string => {
     if (vehicle.images && vehicle.images.length > 0) {
-      const mapped = mapImageUrls([vehicle.images[0]]);
-      return mapped[0];
+      return getVehicleImageUrl(vehicle.images[0]);
     }
     return '';
   };
@@ -189,8 +186,9 @@ export function StockMenu({ isOpen: isOpenProp, onOpenChange, hideButton = false
                     ))}
                   </div>
                 ) : vehicles.length === 0 ? (
-                  <div className="flex items-center justify-center py-8">
-                    <div className="text-white/70">No hay vehículos disponibles</div>
+                  <div className="flex flex-col items-center justify-center py-8 gap-2 text-center px-4">
+                    <div className="text-white/80 font-medium">No hay vehículos disponibles</div>
+                    <div className="text-white/50 text-sm">Comprueba que el backend esté en marcha en el puerto 3001.</div>
                   </div>
                 ) : (
                   vehicles.map((vehicle, index) => {

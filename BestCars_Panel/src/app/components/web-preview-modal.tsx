@@ -12,6 +12,7 @@ import {
   Camera, ParkingCircle, Sun
 } from 'lucide-react';
 import { Vehicle } from '../data/mock-data';
+import { ImageWithFallback } from './figma/ImageWithFallback';
 
 interface WebPreviewModalProps {
   isOpen: boolean;
@@ -131,7 +132,7 @@ export function WebPreviewModal({ isOpen, onClose, vehicle }: WebPreviewModalPro
               <div className="max-w-7xl mx-auto">
                 {/* Main Image */}
                 <div className="relative aspect-[21/9] bg-gray-900 overflow-hidden group">
-                  <img
+                  <ImageWithFallback
                     src={images[selectedImageIndex]}
                     alt={vehicle.name}
                     className="w-full h-full object-cover"
@@ -201,7 +202,7 @@ export function WebPreviewModal({ isOpen, onClose, vehicle }: WebPreviewModalPro
                             : 'border-white/20 hover:border-white/40'
                         }`}
                       >
-                        <img
+                        <ImageWithFallback
                           src={img}
                           alt={`Thumbnail ${idx + 1}`}
                           className="w-full h-full object-cover"
@@ -320,15 +321,15 @@ export function WebPreviewModal({ isOpen, onClose, vehicle }: WebPreviewModalPro
                     {/* Tab Headers */}
                     <div className="border-b border-white/10">
                       <div className="flex">
-                        {[
+                        {([
                           { id: 'specs', label: 'Especificaciones', icon: Settings },
                           { id: 'features', label: 'Equipamiento', icon: CheckCircle },
                           { id: 'history', label: 'Historial', icon: Clock },
                           { id: 'videos', label: 'Videos y Clips', icon: Eye },
-                        ].map((tab) => (
+                        ] as const).map((tab) => (
                           <button
                             key={tab.id}
-                            onClick={() => setActiveTab(tab.id as any)}
+                            onClick={() => setActiveTab(tab.id)}
                             className={`flex-1 flex items-center justify-center gap-2 px-6 py-4 transition-colors relative ${
                               activeTab === tab.id
                                 ? 'text-blue-400'
@@ -564,7 +565,7 @@ export function WebPreviewModal({ isOpen, onClose, vehicle }: WebPreviewModalPro
 
                           {/* Video Clips */}
                           <div className="space-y-4">
-                            {(vehicle as any).clips?.map((clip, idx) => (
+                            {vehicle.clips?.map((clip, idx) => (
                               <div key={idx} className="p-4 rounded-xl bg-white/5 border border-white/10">
                                 <div className="flex items-center justify-between mb-3">
                                   <div className="flex items-center gap-3">

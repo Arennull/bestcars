@@ -6,9 +6,8 @@ import { Link } from "react-router-dom";
 import garageImage from "../../assets/Ilustración_sin_título 103.jpg";
 import logoImage from "../../assets/IMG_2007.PNG";
 import { StockMenu } from "../components/StockMenu";
-import { api, type Scene, type ScenePosition } from "../../services/api.js";
+import { api, getVehicleImageUrl, type Scene, type ScenePosition } from "../../services/api.js";
 import type { Vehicle } from "../../types/vehicle.js";
-import { getImageUrl } from "../../utils/imageMap.js";
 import "./GaragePage.css";
 
 const MOBILE_START_POSITION = 50;
@@ -74,22 +73,20 @@ export default function GaragePage() {
                 if (!slot?.vehicleId) return null;
                 const vehicle = vehicleMap.get(slot.vehicleId);
                 if (!vehicle) return null;
-                const imgSrc = vehicle.images?.[0] ? getImageUrl(vehicle.images[0]) : vehicle.images?.[0] ?? "";
                 const t = slot.transform ?? { x: 0, y: 0, scale: 1, rotation: 0 };
                 return (
-                  <div
+                  <Link
                     key={posId}
+                    to={`/vehicle/${vehicle.id}`}
                     className="absolute left-1/2 top-1/2 select-none"
                     style={{
-                      transform: `translate(-50%, -50%) translate(${t.x}px, ${t.y}px) rotate(${t.rotation}deg) scale(${t.scale})`,
+                      transform: `translate(-50%, -50%) translate(${t.x}px, ${t.y}px)`,
                     }}
+                    aria-label={vehicle.title}
                   >
-                    <img
-                      src={imgSrc}
-                      alt={vehicle.title}
-                      className="w-[min(360px,60vw)] h-auto rounded-xl border border-white/10 shadow-2xl"
-                    />
-                  </div>
+                    {/* Área clicable transparente sobre el coche ya dibujado en la escena */}
+                    <div className="w-[min(260px,45vw)] h-[min(140px,30vw)] cursor-pointer border-2 border-transparent hover:border-white/40 rounded-xl transition-colors duration-150" />
+                  </Link>
                 );
               })}
             </div>

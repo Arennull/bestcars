@@ -1,6 +1,18 @@
 import type { Vehicle, ContactFormData, ContactSubmissionResponse, TestDriveFormData, TestDriveSubmissionResponse } from '../types/vehicle.js';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_VEHICLES_IMAGES = `${API_BASE_URL}/api/vehicles/images`;
+
+/**
+ * URL de imagen de vehículo (sincronizado con el panel y el backend).
+ * Si ya es URL (http/https/data) se devuelve tal cual; si no, se usa el endpoint del API.
+ */
+export function getVehicleImageUrl(filenameOrUrl: string): string {
+  if (!filenameOrUrl || typeof filenameOrUrl !== 'string') return '';
+  const s = filenameOrUrl.trim();
+  if (/^https?:\/\//i.test(s) || s.startsWith('data:')) return s;
+  return `${API_VEHICLES_IMAGES}/${encodeURIComponent(s)}`;
+}
 
 class ApiError extends Error {
   constructor(public status: number, message: string) {
@@ -15,6 +27,7 @@ async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> 
   try {
     const response = await fetch(url, {
       ...options,
+      cache: 'no-store',
       headers: {
         'Content-Type': 'application/json',
         ...options?.headers,
@@ -37,17 +50,25 @@ async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> 
 
 export const api = {
   /**
-   * Get all vehicles
+   * Get all vehicles.
+   * Acepta respuesta como array o como { data: Vehicle[] }.
    */
   async getAllVehicles(): Promise<Vehicle[]> {
-    return fetchApi<Vehicle[]>('/api/vehicles');
+    const raw = await fetchApi<Vehicle[] | { data: Vehicle[] }>('/api/vehicles');
+    return Array.isArray(raw) ? raw : (raw?.data && Array.isArray(raw.data) ? raw.data : []);
   },
 
   /**
-   * Get a single vehicle by ID
+   * Get a single vehicle by ID.
+   * Normaliza la respuesta para que images y tags sean siempre arrays.
    */
   async getVehicleById(id: string): Promise<Vehicle> {
-    return fetchApi<Vehicle>(`/api/vehicles/${id}`);
+    const raw = await fetchApi<Vehicle>(`/api/vehicles/${id}`);
+    return {
+      ...raw,
+      images: Array.isArray(raw.images) ? raw.images : [],
+      tags: Array.isArray(raw.tags) ? raw.tags : [],
+    };
   },
 
   /**

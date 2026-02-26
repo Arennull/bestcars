@@ -126,7 +126,10 @@ export const getAllTestDrives = async (_req: Request, res: Response): Promise<vo
           lastVehicle: s.lastVehicle,
           interests: s.interests,
           mainUse: s.mainUse,
+          status: (s as { status?: string }).status ?? 'new',
+          notes: (s as { notes?: string | null }).notes ?? null,
           createdAt: s.createdAt.toISOString(),
+          updatedAt: (s as { updatedAt?: Date }).updatedAt?.toISOString?.() ?? s.createdAt.toISOString(),
         }))
       );
       return;
@@ -135,5 +138,55 @@ export const getAllTestDrives = async (_req: Request, res: Response): Promise<vo
   } catch (error) {
     console.error('[testDriveController] Error fetching test drives:', error);
     res.status(500).json({ error: 'Failed to fetch test drive submissions' });
+  }
+};
+
+/**
+ * PATCH /api/test-drive/:id - Actualizar lead (status, notes). Requiere auth.
+ */
+export const updateTestDrive = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (Number.isNaN(id)) {
+      res.status(400).json({ error: 'Invalid test drive id' });
+      return;
+    }
+    const { status, notes } = req.body ?? {};
+
+    if (!useDatabase) {
+      res.status(501).json({ error: 'Update test drive requires DATABASE_URL' });
+      return;
+    }
+
+    const data: { status?: string; notes?: string | null } = {};
+    if (status !== undefined) data.status = String(status).trim() || 'new';
+    if (notes !== undefined) data.notes = notes === null || notes === '' ? null : String(notes).trim();
+
+    const submission = await prisma.testDriveSubmission.update({
+      where: { id },
+      data,
+    });
+    const s = submission as typeof submission & { status?: string; notes?: string | null; updatedAt: Date };
+    res.json({
+      id: s.id,
+      vehicleId: s.vehicleId,
+      vehicleTitle: s.vehicleTitle,
+      name: s.name,
+      age: s.age,
+      lastVehicle: s.lastVehicle,
+      interests: s.interests,
+      mainUse: s.mainUse,
+      status: s.status ?? 'new',
+      notes: s.notes ?? null,
+      createdAt: s.createdAt.toISOString(),
+      updatedAt: s.updatedAt.toISOString(),
+    });
+  } catch (error) {
+    console.error('[testDriveController] Error updating test drive:', error);
+    if ((error as { code?: string }).code === 'P2025') {
+      res.status(404).json({ error: 'Test drive not found' });
+      return;
+    }
+    res.status(500).json({ error: 'Failed to update test drive' });
   }
 };

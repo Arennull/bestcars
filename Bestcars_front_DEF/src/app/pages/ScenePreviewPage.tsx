@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { api, type Scene, type ScenePosition } from "../../services/api.js";
+import { api, getVehicleImageUrl, type Scene, type ScenePosition } from "../../services/api.js";
 import type { Vehicle } from "../../types/vehicle.js";
-import { getImageUrl } from "../../utils/imageMap.js";
 
 interface SceneState {
   scene: Scene | null;
@@ -112,8 +111,8 @@ export default function ScenePreviewPage() {
         if (!vehicle) return null;
 
         const imgSrc = vehicle.images?.[0]
-          ? getImageUrl(vehicle.images[0])
-          : vehicle.images?.[0] ?? "";
+          ? getVehicleImageUrl(vehicle.images[0])
+          : "";
         const t = slot.transform ?? { x: 0, y: 0, scale: 1, rotation: 0 };
 
         return (

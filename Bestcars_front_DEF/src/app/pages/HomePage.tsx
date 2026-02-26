@@ -56,10 +56,9 @@ export function HomePage() {
           fetchPriority="high"
           decoding="async"
           onLoad={() => setHouseImageLoaded(true)}
-          onError={(e) => {
-            console.error("Failed to load house image:", e);
+          onError={() => {
             setHouseImageError(true);
-            setHouseImageLoaded(true); // Allow page to show even if image fails
+            setHouseImageLoaded(true);
           }}
         />
         {allImagesLoaded && (

@@ -150,9 +150,8 @@ export function HeroGallery({ images }: HeroGalleryProps) {
       try {
         const grouped = await groupImagesByOrientation(images, isMobile);
         setProcessedImages(grouped);
-      } catch (error) {
-        console.error('Error processing images:', error);
-        // Fallback to treating all as horizontal
+      } catch {
+        // Fallback: treat all as horizontal
         setProcessedImages({ horizontal: images, verticalGroups: [] });
       } finally {
         setIsProcessingImages(false);

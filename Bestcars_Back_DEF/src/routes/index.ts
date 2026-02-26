@@ -11,12 +11,13 @@ import contactRoutes from './contactRoutes.js';
 import testDriveRoutes from './testDriveRoutes.js';
 import sceneRoutes from './sceneRoutes.js';
 import authRoutes from './authRoutes.js';
-import { healthCheck } from '../controllers/healthController.js';
+import { healthCheck, healthReady } from '../controllers/healthController.js';
 
 const router = express.Router();
 
-// Health check: verifica que la API está activa
+// Health: liveness y readiness (Railway/K8s)
 router.get('/health', healthCheck);
+router.get('/health/ready', healthReady);
 
 // Autenticación del panel (POST /api/auth/login)
 router.use('/auth', authRoutes);

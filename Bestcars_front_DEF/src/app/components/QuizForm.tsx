@@ -109,8 +109,6 @@ export function QuizForm({ isOpen, onClose, vehicleId, vehicleTitle }: QuizFormP
       });
       setIsCompleted(true);
     } catch (error) {
-      console.error('Error submitting test drive request:', error);
-      // Mostrar error al usuario
       const msg = error instanceof Error ? error.message : 'Error al enviar. Inténtalo de nuevo.';
       setError(msg);
     } finally {

@@ -6,6 +6,7 @@ import { useMemo } from "react";
 import { motion } from "motion/react";
 import { TrendingUp, TrendingDown, Eye, MousePointer, Users, Video } from 'lucide-react';
 import { Vehicle } from '../data/mock-data';
+import { ImageWithFallback } from './figma/ImageWithFallback';
 import {
   BarChart,
   Bar,
@@ -286,7 +287,7 @@ export function StatsSection({ vehicles }: StatsSectionProps) {
               >
                 <span className="text-3xl">{medals[index]}</span>
                 <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 border border-white/10">
-                  <img src={vehicle.image} alt={vehicle.name} className="w-full h-full object-cover" />
+                  <ImageWithFallback src={vehicle.image} alt={vehicle.name} className="w-full h-full object-cover" />
                 </div>
                 <div className="flex-1">
                   <h4 className="text-white mb-1">{vehicle.name}</h4>

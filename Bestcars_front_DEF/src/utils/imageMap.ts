@@ -509,8 +509,10 @@ export function getImageUrl(filename: string): string {
 }
 
 /**
- * Map an array of image filenames to their actual URLs
+ * Map an array of image filenames to their actual URLs.
+ * Accepts undefined/null and returns [] to avoid crashes.
  */
-export function mapImageUrls(filenames: string[]): string[] {
+export function mapImageUrls(filenames: string[] | undefined | null): string[] {
+  if (!Array.isArray(filenames)) return [];
   return filenames.map(getImageUrl);
 }

@@ -1,12 +1,14 @@
 /**
- * Editor de escenas para posicionar vehículos en fondos.
+ * Editor de escenas para definir una única imagen de escena (URL)
+ * y los puntos clicables de cada coche sobre esa imagen.
  * Sincroniza el estado con un iframe de vista previa mediante postMessage.
  */
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Plus, Copy, Trash2, Save, RotateCcw, Image as ImageIcon } from "lucide-react";
 
 import { Vehicle } from "../data/mock-data";
+import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { useLocalStorageState } from "../hooks/use-local-storage-state";
 import { useSceneEditorApi, apiSceneToEditorScene } from "../../hooks/useSceneEditorApi";
 import { createScene as apiCreateScene } from "../../services/api";
@@ -285,6 +287,8 @@ export function SceneEditorSection({ vehicles, searchQuery = "", apiMode = false
   const resetTransform = () => {
     setDraftSlot((prev) => ({
       ...prev,
+      // En el nuevo flujo solo nos interesa la posición (x, y) como punto clicable.
+      // Escala y rotación se fijan a valores neutros.
       transform: { x: 0, y: 0, scale: 1, rotation: 0 },
       updatedAt: nowIso(),
     }));
@@ -337,6 +341,29 @@ export function SceneEditorSection({ vehicles, searchQuery = "", apiMode = false
 
   const onVehiclePointerUp = () => {
     draggingRef.current.isDragging = false;
+  };
+
+  // Permite hacer clic en el lienzo para colocar el hotspot del vehículo seleccionado
+  const handleCanvasClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!draftSlot.vehicleId) {
+      toast.error("Selecciona primero un vehículo para esta posición.");
+      return;
+    }
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    // Coordenadas relativas al centro del canvas (coherentes con translate(-50%, -50%))
+    const offsetX = e.clientX - rect.left - rect.width / 2;
+    const offsetY = e.clientY - rect.top - rect.height / 2;
+
+    setDraftSlot((prev) => ({
+      ...prev,
+      transform: {
+        ...prev.transform,
+        x: offsetX,
+        y: offsetY,
+      },
+      updatedAt: nowIso(),
+    }));
   };
 
   // --------- Preview sync via postMessage ---------
@@ -561,7 +588,8 @@ export function SceneEditorSection({ vehicles, searchQuery = "", apiMode = false
               <div>
                 <h4 className="text-white/80 text-sm">Composición</h4>
                 <p className="text-xs text-white/40">
-                  Arrastra el vehículo para posicionarlo. Escala y rotación en el panel derecho.
+                  Pega la URL de una imagen de escena con los coches ya dibujados y
+                  marca sobre qué zona se puede hacer clic para cada vehículo.
                 </p>
               </div>
               <button
@@ -580,12 +608,13 @@ export function SceneEditorSection({ vehicles, searchQuery = "", apiMode = false
                 backgroundSize: "cover",
                 backgroundPosition: "center",
               }}
+              onClick={handleCanvasClick}
             >
               {!draftBackgroundUrl && (
                 <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent" />
               )}
 
-              {/* Vehicle */}
+              {/* Hotspot del vehículo seleccionado */}
               {activeVehicle ? (
                 <div
                   className="absolute left-1/2 top-1/2 select-none"
@@ -597,19 +626,20 @@ export function SceneEditorSection({ vehicles, searchQuery = "", apiMode = false
                   onPointerMove={onVehiclePointerMove}
                   onPointerUp={onVehiclePointerUp}
                 >
-                  <img
-                    src={activeVehicle.images?.[0] ?? activeVehicle.image}
-                    alt={activeVehicle.name}
-                    className="w-[360px] max-w-[60vw] h-auto rounded-xl border border-white/10 shadow-2xl"
-                    draggable={false}
-                  />
+                  {/* Marcador visual del punto clicable */}
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="w-10 h-10 rounded-full border-2 border-blue-400 bg-blue-500/40 shadow-lg" />
+                    <span className="px-2 py-0.5 rounded-full bg-black/60 text-white/80 text-xs">
+                      {activeVehicle.name}
+                    </span>
+                  </div>
                 </div>
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="text-center">
-                    <p className="text-white/70">No hay vehículo en esta posición</p>
+                    <p className="text-white/70">No hay vehículo asignado a esta posición</p>
                     <p className="text-sm text-white/40 mt-1">
-                      Selecciona uno en el panel derecho.
+                      Selecciona un vehículo en el panel derecho y haz clic sobre la imagen para definir su punto clicable.
                     </p>
                   </div>
                 </div>

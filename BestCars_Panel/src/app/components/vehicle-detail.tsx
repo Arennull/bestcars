@@ -6,8 +6,9 @@ import { useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import { X, Pencil, Save, Calendar, TrendingDown, TrendingUp, Video, Play, Eye } from 'lucide-react';
+import { X, Pencil, Save, Calendar, TrendingDown, TrendingUp, Video, Play, Eye, Trash2 } from 'lucide-react';
 import { Vehicle } from '../data/mock-data';
+import { ImageWithFallback } from './figma/ImageWithFallback';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface VehicleDetailProps {
@@ -15,6 +16,7 @@ interface VehicleDetailProps {
   onClose: () => void;
   onUpdate: (vehicleId: string, updates: Partial<Vehicle>) => void;
   onWebPreview: (vehicle: Vehicle) => void;
+  onDelete?: (vehicleId: string) => void | Promise<void>;
 }
 
 /** Imagen arrastrable para reordenar en la galería */
@@ -55,7 +57,7 @@ function DraggableImage({ image, index, moveImage }: DraggableImageProps) {
       whileHover={{ scale: 1.05 }}
       className="relative aspect-video rounded-xl overflow-hidden border border-white/10 cursor-move group"
     >
-      <img src={image} alt="" className="w-full h-full object-cover" />
+      <ImageWithFallback src={image} alt="" className="w-full h-full object-cover" />
       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-3">
         <span className="text-xs text-white/80">Arrastra para reordenar</span>
       </div>
@@ -63,7 +65,7 @@ function DraggableImage({ image, index, moveImage }: DraggableImageProps) {
   );
 }
 
-export function VehicleDetail({ vehicle, onClose, onUpdate, onWebPreview }: VehicleDetailProps) {
+export function VehicleDetail({ vehicle, onClose, onUpdate, onWebPreview, onDelete }: VehicleDetailProps) {
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [description, setDescription] = useState(vehicle.description);
   const [status, setStatus] = useState(vehicle.status);
@@ -138,12 +140,28 @@ export function VehicleDetail({ vehicle, onClose, onUpdate, onWebPreview }: Vehi
               <h2 className="text-2xl text-white mb-1">{vehicle.name}</h2>
               <p className="text-sm text-white/50">{vehicle.brand} • {vehicle.model} • {vehicle.year}</p>
             </div>
-            <button
-              onClick={onClose}
-              className="p-2 rounded-xl hover:bg-white/10 transition-colors"
-            >
-              <X className="w-6 h-6 text-white/70" />
-            </button>
+            <div className="flex items-center gap-2">
+              {onDelete && (
+                <button
+                  onClick={() => {
+                    if (window.confirm(`¿Eliminar el vehículo "${vehicle.name}"? Esta acción no se puede deshacer.`)) {
+                      void onDelete(vehicle.id);
+                    }
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500/20 border border-red-500/40 hover:bg-red-500/30 text-red-200 transition-colors"
+                  title="Eliminar vehículo"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Eliminar vehículo
+                </button>
+              )}
+              <button
+                onClick={onClose}
+                className="p-2 rounded-xl hover:bg-white/10 transition-colors"
+              >
+                <X className="w-6 h-6 text-white/70" />
+              </button>
+            </div>
           </div>
 
           <div className="p-8">
@@ -152,7 +170,7 @@ export function VehicleDetail({ vehicle, onClose, onUpdate, onWebPreview }: Vehi
               <div className="col-span-2 space-y-6">
                 {/* Main Image */}
                 <div className="relative aspect-video rounded-2xl overflow-hidden border border-white/10">
-                  <img src={vehicle.image} alt={vehicle.name} className="w-full h-full object-cover" />
+                  <ImageWithFallback src={vehicle.image} alt={vehicle.name} className="w-full h-full object-cover" />
                 </div>
 
                 {/* Gallery */}

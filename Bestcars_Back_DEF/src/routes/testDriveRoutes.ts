@@ -1,19 +1,26 @@
 /**
- * Rutas de solicitudes de prueba de manejo
+ * Rutas de solicitudes de prueba de manejo (leads)
  * Base path: /api/test-drive
+ * GET y PATCH requieren autenticación (panel). POST es público (formulario web).
  */
 
-import express, { type Request, type Response } from 'express';
-import { submitTestDrive, getAllTestDrives } from '../controllers/testDriveController.js';
+import express from 'express';
+import rateLimit from 'express-rate-limit';
+import { submitTestDrive, getAllTestDrives, updateTestDrive } from '../controllers/testDriveController.js';
+import { requireAuth } from '../middleware/auth.js';
 
 const router = express.Router();
 
-router.get('/', getAllTestDrives);
-router.post('/', submitTestDrive);
-
-/** PATCH /api/test-drive/:id - Panel actualiza lead; en este backend solo lectura sin DB */
-router.patch('/:id', (_req: Request, res: Response) => {
-  res.status(501).json({ error: 'Actualización de test-drive no implementada. Usa BestCars_Back-updated o configura DATABASE_URL.' });
+const testDriveFormLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 20,
+  message: { error: 'Límite de envíos alcanzado. Intenta más tarde.' },
+  standardHeaders: true,
+  legacyHeaders: false,
 });
+
+router.post('/', testDriveFormLimiter, submitTestDrive);
+router.get('/', requireAuth, getAllTestDrives);
+router.patch('/:id', requireAuth, updateTestDrive);
 
 export default router;

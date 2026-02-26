@@ -18,9 +18,8 @@ import { StatsRow } from '../components/StatsRow';
 import { DescriptionSection } from '../components/DescriptionSection';
 import { SpecificationsSection } from '../components/SpecificationsSection';
 import { ContactForm, type ContactFormRef } from '../components/ContactForm';
-import { api } from '../../services/api.js';
+import { api, getVehicleImageUrl } from '../../services/api.js';
 import { vehicleToStats } from '../../utils/vehicleUtils.js';
-import { mapImageUrls } from '../../utils/imageMap.js';
 import type { Vehicle } from '../../types/vehicle.js';
 
 export function VehicleDetailPage() {
@@ -53,6 +52,16 @@ export function VehicleDetailPage() {
     fetchVehicle();
   }, [id]);
 
+  // SEO: título dinámico por vehículo (hook siempre en el mismo orden, antes de cualquier return)
+  useEffect(() => {
+    if (!vehicle?.title) return;
+    const title = `${vehicle.title} | Best Cars Ibérica`;
+    document.title = title;
+    return () => {
+      document.title = 'Best Cars Ibérica | Vehículos de Lujo';
+    };
+  }, [vehicle?.title]);
+
   if (loading) {
     return <VehicleDetailSkeleton />;
   }
@@ -73,16 +82,8 @@ export function VehicleDetailPage() {
   }
 
   const stats = vehicleToStats(vehicle);
-  const mappedImages = mapImageUrls(vehicle.images);
-
-  // SEO: título dinámico por vehículo
-  useEffect(() => {
-    const title = `${vehicle.title} | Best Cars Ibérica`;
-    document.title = title;
-    return () => {
-      document.title = 'Best Cars Ibérica | Vehículos de Lujo';
-    };
-  }, [vehicle.title]);
+  const images = Array.isArray(vehicle.images) ? vehicle.images : [];
+  const mappedImages = images.map(getVehicleImageUrl);
 
   return (
     <div className="min-h-screen">
@@ -122,15 +123,15 @@ export function VehicleDetailPage() {
           {/* Left Column */}
           <div>
             <ProductHeader
-              title={vehicle.title}
-              year={vehicle.year}
-              mileage={vehicle.mileage}
-              price={vehicle.price}
-              priceSubtext={vehicle.priceSubtext ?? ""}
-              tags={vehicle.tags}
+              title={vehicle.title ?? vehicle.id}
+              year={Number(vehicle.year) || new Date().getFullYear()}
+              mileage={vehicle.mileage ?? ''}
+              price={vehicle.price ?? ''}
+              priceSubtext={vehicle.priceSubtext ?? ''}
+              tags={Array.isArray(vehicle.tags) ? vehicle.tags : []}
               onRequestTestDrive={() => contactFormRef.current?.focusNameField()}
               vehicleId={vehicle.id}
-              vehicleTitle={vehicle.title}
+              vehicleTitle={vehicle.title ?? vehicle.id}
             />
 
             <StatsRow stats={stats} />

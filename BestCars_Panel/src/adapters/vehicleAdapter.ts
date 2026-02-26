@@ -3,6 +3,7 @@
  */
 import type { Vehicle } from '../app/data/mock-data';
 import type { ApiVehicle, ApiVehicleCreate, ApiVehicleUpdate } from '../services/api';
+import { getVehicleImageUrl } from '../services/api';
 
 function parsePrice(priceStr: string): number {
   const num = priceStr.replace(/[^\d,.-]/g, '').replace(',', '');
@@ -57,8 +58,8 @@ export function apiVehicleToPanel(api: ApiVehicle): Vehicle {
     price,
     priceHistory: [{ date: api.updatedAt, price }],
     status: mapStatusToPanel(api.status),
-    image: (Array.isArray(api.images) && api.images[0]) ?? '',
-    images: Array.isArray(api.images) && api.images.length ? api.images : [],
+    image: getVehicleImageUrl((Array.isArray(api.images) && api.images[0]) ?? ''),
+    images: Array.isArray(api.images) && api.images.length ? api.images.map(getVehicleImageUrl) : [],
     specs: {
       motor: (extractSpec(motorSpecs, 'Motor') || extractSpec(motorSpecs, 'motor') || api.fuelType) ?? '',
       potencia: (extractSpec(motorSpecs, 'Potencia') || extractSpec(motorSpecs, 'potencia')) ?? '',

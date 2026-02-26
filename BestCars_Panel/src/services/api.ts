@@ -8,6 +8,17 @@ const API = `${API_BASE}/api`;
 
 const TOKEN_KEY = 'bestcars_admin_token';
 
+/**
+ * Convierte un nombre de archivo de imagen (ej. AUDI RS6_42.jpg) en URL completa del backend.
+ * Si ya es una URL (http/https/data), se devuelve tal cual.
+ */
+export function getVehicleImageUrl(filenameOrUrl: string): string {
+  if (!filenameOrUrl || typeof filenameOrUrl !== 'string') return '';
+  const s = filenameOrUrl.trim();
+  if (/^https?:\/\//i.test(s) || s.startsWith('data:')) return s;
+  return `${API}/vehicles/images/${encodeURIComponent(s)}`;
+}
+
 export function getStoredToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);
 }

@@ -40,8 +40,7 @@ export default function CarHotspots() {
         const data = await api.getAllVehicles();
         // Show all vehicles on home page
         setVehicles(data);
-      } catch (error) {
-        console.error("Error fetching vehicles:", error);
+      } catch {
         // Fallback to known vehicle IDs if API fails
         // This ensures hotspots still show even if backend is down
         setVehicles([

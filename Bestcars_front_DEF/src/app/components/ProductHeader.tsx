@@ -41,7 +41,6 @@ export function ProductHeader({ title, year, mileage, price, priceSubtext, tags,
           await navigator.clipboard.writeText(url);
           toast.success('URL copiada al portapapeles');
         } catch {
-          console.error('Error sharing:', error);
           toast.error('No se pudo compartir. Por favor, copia la URL manualmente.');
         }
       }
@@ -82,7 +81,7 @@ export function ProductHeader({ title, year, mileage, price, priceSubtext, tags,
           </div>
 
           <div className="flex gap-2 sm:gap-3 md:gap-4 flex-wrap mb-3 sm:mb-4 md:mb-6 justify-around lg:justify-start">
-            {tags.map((tag, idx) => (
+            {(Array.isArray(tags) ? tags : []).map((tag, idx) => (
               <span
                 key={idx}
                 className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full border border-white/[0.08] bg-white/[.04] text-white/70 text-[10px] sm:text-xs"

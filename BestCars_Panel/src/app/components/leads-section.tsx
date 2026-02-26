@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 import { motion } from "motion/react";
 import { Mail, Phone, Calendar, User, MessageSquare, Inbox } from 'lucide-react';
 import { Lead, Vehicle } from '../data/mock-data';
+import { ImageWithFallback } from './figma/ImageWithFallback';
 
 interface LeadsSectionProps {
   leads: Lead[];
@@ -175,7 +176,7 @@ export function LeadsSection({ leads, vehicles, onLeadUpdate }: LeadsSectionProp
                   {/* Vehicle Image */}
                   {vehicle && (
                     <div className="w-24 h-24 md:w-32 md:h-32 rounded-xl overflow-hidden flex-shrink-0 border border-white/10">
-                      <img
+                      <ImageWithFallback
                         src={vehicle.image}
                         alt={vehicle.name}
                         loading="lazy"

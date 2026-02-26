@@ -8,6 +8,7 @@ import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { Eye, MousePointer, Users, TrendingUp, TrendingDown, Video, Pencil, Check, Plus, Car } from "lucide-react";
 import { Vehicle } from "../data/mock-data";
+import { ImageWithFallback } from "./figma/ImageWithFallback";
 
 interface StockSectionProps {
   vehicles: Vehicle[];
@@ -97,8 +98,8 @@ function VehicleCard({ vehicle, index, onVehicleClick, onPriceUpdate, moveCard }
       {/* Glassmorphism Card */}
       <div className="relative rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.05] to-white/[0.02] backdrop-blur-xl overflow-hidden">
         {/* Image */}
-        <div className="relative h-48 overflow-hidden">
-          <img
+        <div className="relative h-48 overflow-hidden bg-white/5">
+          <ImageWithFallback
             src={vehicle.image}
             alt={vehicle.name}
             loading="lazy"

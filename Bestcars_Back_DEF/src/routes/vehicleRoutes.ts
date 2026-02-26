@@ -1,22 +1,63 @@
 /**
  * Rutas de vehículos
  * Base path: /api/vehicles
+ * GET público (web y panel). POST, PATCH, DELETE requieren auth (panel).
  */
 
 import express, { type Request, type Response } from 'express';
-import { getAllVehicles, getVehicleById } from '../controllers/vehicleController.js';
+import path from 'path';
+import fs from 'fs';
+import {
+  getAllVehicles,
+  getVehicleById,
+  createVehicle,
+  updateVehicle,
+  deleteVehicle,
+} from '../controllers/vehicleController.js';
+import { requireAuth } from '../middleware/auth.js';
+
+// Raíz del proyecto (funciona con npm run dev y npm start)
+const VEHICLE_IMAGES_DIR = path.join(process.cwd(), 'public', 'vehicle-images');
 
 const router = express.Router();
 
 router.get('/', getAllVehicles);
+
+/** Sirve imágenes de vehículos por nombre de archivo (ej. AUDI RS6_42.jpg). Debe ir antes de /:id */
+router.get('/images/:filename', (req: Request, res: Response) => {
+  try {
+    const filename = req.params.filename;
+    if (!filename || filename.includes('..')) {
+      res.status(400).end();
+      return;
+    }
+    const filepath = path.join(VEHICLE_IMAGES_DIR, filename);
+    let stat: fs.Stats;
+    try {
+      stat = fs.statSync(filepath);
+    } catch {
+      res.status(404).end();
+      return;
+    }
+    if (!stat.isFile()) {
+      res.status(404).end();
+      return;
+    }
+    // CORS explícito para que el panel (origen distinto) pueda cargar las imágenes
+    const origin = req.get('Origin');
+    if (origin) res.setHeader('Access-Control-Allow-Origin', origin);
+    res.sendFile(filepath, (err) => {
+      if (err && !res.headersSent) res.status(500).end();
+    });
+  } catch {
+    if (!res.headersSent) res.status(500).end();
+  }
+});
+
 router.get('/:id', getVehicleById);
 
-const notImplemented = (msg: string) => (_req: Request, res: Response) => {
-  res.status(501).json({ error: msg });
-};
-
-router.post('/', notImplemented('Crear vehículo no implementado. Usa BestCars_Back-updated o configura DATABASE_URL.'));
-router.patch('/:id', notImplemented('Actualizar vehículo no implementado. Usa BestCars_Back-updated o configura DATABASE_URL.'));
-router.delete('/:id', notImplemented('Eliminar vehículo no implementado. Usa BestCars_Back-updated o configura DATABASE_URL.'));
+router.post('/', requireAuth, createVehicle);
+router.patch('/:id', requireAuth, updateVehicle);
+router.delete('/:id', requireAuth, deleteVehicle);
 
 export default router;

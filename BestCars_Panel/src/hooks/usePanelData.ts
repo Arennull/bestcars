@@ -189,6 +189,24 @@ export function usePanelData(apiMode: boolean, isAuthenticated: boolean) {
     [apiMode, isAuthenticated, setVehiclesState]
   );
 
+  const handleVehicleDelete = useCallback(
+    async (vehicleId: string) => {
+      if (apiMode && isAuthenticated) {
+        try {
+          await deleteVehicle(vehicleId);
+          setVehiclesState((prev) => prev.filter((v) => v.id !== vehicleId));
+          toast.success("Vehículo eliminado");
+        } catch (err) {
+          toast.error(err instanceof Error ? err.message : "Error al eliminar");
+        }
+      } else {
+        setVehiclesState((prev) => prev.filter((v) => v.id !== vehicleId));
+        toast.success("Vehículo eliminado");
+      }
+    },
+    [apiMode, isAuthenticated, setVehiclesState]
+  );
+
   return {
     vehicles,
     leads,
@@ -199,5 +217,6 @@ export function usePanelData(apiMode: boolean, isAuthenticated: boolean) {
     handlePriceUpdate,
     handleLeadUpdate,
     handleSaveNewVehicle,
+    handleVehicleDelete,
   };
 }

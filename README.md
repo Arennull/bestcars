@@ -6,15 +6,14 @@ Sistema integral para concesionario de vehículos premium: **página web públic
 |-----------------|-------------|
 | **Página web**  | Landing con catálogo, formulario de contacto y solicitud de prueba de manejo |
 | **Panel admin** | Gestión de stock, leads, estadísticas y editor de escenas (garaje) |
-| **API**         | Dos opciones: Back-updated (completa + BD) o Back_DEF (lectura + login) |
+| **API**         | Backend definitivo `Bestcars_Back_DEF` (completo + BD) |
 
 ---
 
 ## Estructura del repositorio
 
 ```
-├── BestCars_Back-updated/   # API completa (Node, Express, Prisma, Supabase)
-├── Bestcars_Back_DEF/       # API alternativa (Node, Express; lectura + auth)
+├── Bestcars_Back_DEF/       # API backend definitivo (Node, Express, Prisma, Supabase)
 ├── Bestcars_front_DEF/      # Página web (React, Vite)
 ├── BestCars_Panel/          # Panel de administración (React, Vite)
 ├── DEPLOY.md                # Guía de despliegue
@@ -35,26 +34,14 @@ Sistema integral para concesionario de vehículos premium: **página web públic
 
 ## Inicio rápido (desarrollo local)
 
-### 1. Backend (elegir uno)
-
-**Opción A — BestCars_Back-updated** (CRUD completo, escenas, base de datos)
-
-```bash
-cd BestCars_Back-updated
-cp .env.example .env
-# Editar .env: DATABASE_URL (Supabase), ADMIN_PASSWORD, JWT_SECRET, CORS_ORIGINS
-npm install
-npm run db:generate && npm run db:push && npm run db:seed
-npm run dev
-```
-
-**Opción B — Bestcars_Back_DEF** (lectura + login; sin BD = datos mock)
+### 1. Backend (único backend definitivo)
 
 ```bash
 cd Bestcars_Back_DEF
 cp .env.example .env
-# .env ya incluye admin/admin; en producción cambiar ADMIN_PASSWORD y JWT_SECRET
+# Configura DATABASE_URL (Supabase), ADMIN_PASSWORD, JWT_SECRET y CORS_ORIGINS
 npm install
+npm run db:push   # solo si usas DB real
 npm run dev
 ```
 
@@ -92,7 +79,7 @@ Panel en **http://localhost:5174** (o el puerto que muestre Vite).
 
 | Componente   | Puerto | Conecta a |
 |-------------|--------|-----------|
-| Backend     | 3001   | Supabase (si Back-updated con DATABASE_URL) |
+| Backend     | 3001   | Supabase (si `DATABASE_URL` configurada) |
 | Página web  | 5173   | Backend (vehículos, contacto, test-drive, escenas) |
 | Panel       | 5174   | Backend (login, vehículos, leads, escenas) o modo demo (localStorage) |
 
