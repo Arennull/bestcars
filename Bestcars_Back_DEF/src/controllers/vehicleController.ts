@@ -13,7 +13,7 @@ const useDatabase = Boolean(process.env.DATABASE_URL);
 /** Copia mutable para modo MOCK: create/update/delete sin DATABASE_URL */
 function getInMemoryVehicles(): MockVehicle[] {
   const key = '__inMemoryVehicles';
-  const g = globalThis as { [k: string]: MockVehicle[] };
+  const g = globalThis as unknown as { [k: string]: MockVehicle[] };
   if (!g[key]) {
     g[key] = JSON.parse(JSON.stringify(mockVehicles)).map((v: MockVehicle & { createdAt: string; updatedAt: string }) => ({
       ...v,
@@ -272,7 +272,7 @@ export const createVehicle = async (
       description: body.description?.trim() || undefined,
       images: Array.isArray(body.images) ? body.images : [],
       tags: Array.isArray(body.tags) ? body.tags : [],
-      specifications: (body.specifications as MockVehicle['specifications']) ?? { general: [], motor: [], seguridad: [], tecnologia: [] },
+      specifications: (body.specifications as unknown as MockVehicle['specifications']) ?? { general: [], motor: [], seguridad: [], tecnologia: [] },
       createdAt: now,
       updatedAt: now,
     };
@@ -351,7 +351,7 @@ export const updateVehicle = async (req: Request, res: Response): Promise<void> 
   }
 
   try {
-    const updatePayload: Prisma.VehicleUpdateInput = {
+    const updatePayload = {
       ...(data.title !== undefined && { title: data.title }),
       ...(data.year !== undefined && { year: data.year }),
       ...(data.mileage !== undefined && { mileage: data.mileage }),
@@ -362,8 +362,8 @@ export const updateVehicle = async (req: Request, res: Response): Promise<void> 
       ...(data.description !== undefined && { description: data.description }),
       ...(data.images !== undefined && { images: data.images }),
       ...(data.tags !== undefined && { tags: data.tags }),
-      ...(data.specifications !== undefined && { specifications: data.specifications }),
-    };
+      ...(data.specifications !== undefined && { specifications: data.specifications as Prisma.InputJsonValue }),
+    } as Prisma.VehicleUpdateInput;
     const vehicle = await prisma.vehicle.update({
       where: { id },
       data: updatePayload,
