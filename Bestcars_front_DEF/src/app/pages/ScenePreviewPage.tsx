@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { api, getVehicleImageUrl, type Scene, type ScenePosition } from "../../services/api.js";
 import type { Vehicle } from "../../types/vehicle.js";
+import SceneHotspots from "../components/SceneHotspots";
 
 interface SceneState {
   scene: Scene | null;
@@ -103,6 +104,7 @@ export default function ScenePreviewPage() {
         backgroundPosition: "center",
       }}
     >
+      {/* Los coches siguen dibujándose como en el editor, pero sin bloquear los hotspots */}
       {positionIds.map((posId) => {
         const slot = positions[posId];
         if (!slot?.vehicleId) return null;
@@ -110,9 +112,7 @@ export default function ScenePreviewPage() {
         const vehicle = vehicleMap.get(slot.vehicleId);
         if (!vehicle) return null;
 
-        const imgSrc = vehicle.images?.[0]
-          ? getVehicleImageUrl(vehicle.images[0])
-          : "";
+        const imgSrc = vehicle.images?.[0] ? getVehicleImageUrl(vehicle.images[0]) : "";
         const t = slot.transform ?? { x: 0, y: 0, scale: 1, rotation: 0 };
 
         return (
@@ -131,6 +131,9 @@ export default function ScenePreviewPage() {
           </div>
         );
       })}
+
+      {/* Hotspots clicables sobre los coches */}
+      <SceneHotspots positions={positions} vehicles={vehicles} positionIds={positionIds} />
     </div>
   );
 }

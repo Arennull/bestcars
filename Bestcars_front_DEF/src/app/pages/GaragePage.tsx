@@ -6,6 +6,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import garageImage from "../../assets/Ilustración_sin_título 103.jpg";
 import logoImage from "../../assets/IMG_2007.PNG";
 import { StockMenu } from "../components/StockMenu";
+import SceneHotspots from "../components/SceneHotspots";
 import { api, getVehicleImageUrl, type Scene, type ScenePosition } from "../../services/api.js";
 import type { Vehicle } from "../../types/vehicle.js";
 import "./GaragePage.css";
@@ -100,27 +101,7 @@ export default function GaragePage() {
                 position: "relative",
               }}
             >
-              {positionIds.map((posId) => {
-                const slot = positions[posId];
-                if (!slot?.vehicleId) return null;
-                const vehicle = vehicleMap.get(slot.vehicleId);
-                if (!vehicle) return null;
-                const t = slot.transform ?? { x: 0, y: 0, scale: 1, rotation: 0 };
-                return (
-                  <Link
-                    key={posId}
-                    to={`/vehicle/${vehicle.id}`}
-                    className="absolute left-1/2 top-1/2 select-none"
-                    style={{
-                      transform: `translate(-50%, -50%) translate(${t.x}px, ${t.y}px)`,
-                    }}
-                    aria-label={vehicle.title}
-                  >
-                    {/* Área clicable transparente sobre el coche ya dibujado en la escena */}
-                    <div className="w-[min(260px,45vw)] h-[min(140px,30vw)] cursor-pointer border-2 border-transparent hover:border-white/40 rounded-xl transition-colors duration-150" />
-                  </Link>
-                );
-              })}
+              <SceneHotspots positions={positions} vehicles={vehicles} positionIds={positionIds} />
             </div>
             <img
               src={activeScene!.backgroundUrl}

@@ -1,0 +1,148 @@
+.scene-hotspot {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  height: 12px;
+  pointer-events: all;
+  cursor: pointer;
+  text-decoration: none;
+  animation: sceneHotspotFadeIn 0.6s ease-out forwards;
+  opacity: 0;
+  z-index: 20;
+}
+
+.scene-hotspot-hitarea {
+  position: absolute;
+  width: 44px;
+  height: 44px;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
+}
+
+.scene-hotspot-label {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 10px;
+  padding: 6px 12px;
+  white-space: nowrap;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+  pointer-events: none;
+  z-index: 22;
+}
+
+.scene-hotspot:hover .scene-hotspot-label,
+.scene-hotspot:focus-visible .scene-hotspot-label,
+.scene-hotspot:focus-within .scene-hotspot-label {
+  opacity: 1;
+  visibility: visible;
+}
+
+.scene-hotspot-dot {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: #fff;
+  border-radius: 50%;
+  z-index: 21;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+  animation: sceneHotspotPulse 2s ease-in-out infinite;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.scene-hotspot-ring {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border: 1px solid #fff;
+  border-radius: 50%;
+  opacity: 0;
+  transform: scale(1);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 19;
+}
+
+.scene-hotspot::after {
+  content: "";
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border: 0.5px solid rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  top: 50%;
+  left: 50%;
+  animation: sceneHotspotWave 3s ease-out infinite;
+}
+
+.scene-hotspot:hover .scene-hotspot-dot {
+  transform: scale(1.3);
+  animation: none;
+}
+
+.scene-hotspot:hover .scene-hotspot-ring {
+  opacity: 1;
+  transform: scale(4);
+  border-width: 1px;
+  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.scene-hotspot:active .scene-hotspot-ring {
+  transform: scale(5);
+  opacity: 0.6;
+}
+
+.scene-hotspot:hover::after {
+  animation: none;
+  opacity: 0;
+}
+
+@keyframes sceneHotspotFadeIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes sceneHotspotPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes sceneHotspotWave {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.9;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(4.5);
+    opacity: 0;
+  }
+}
+
