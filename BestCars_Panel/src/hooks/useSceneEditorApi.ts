@@ -98,20 +98,22 @@ export function useSceneEditorApi(
     };
   }, [apiMode, isAuthenticated, setStorage]);
 
+  type PersistOptions = { silentSuccess?: boolean };
   const persistScene = useCallback(
-    async (scene: Scene): Promise<boolean> => {
-      if (!apiMode || !isAuthenticated) return false;
+    async (scene: Scene, options?: PersistOptions): Promise<{ ok: true; sceneId: string } | { ok: false }> => {
+      if (!apiMode || !isAuthenticated) return { ok: false };
 
       const payload = {
         name: scene.name,
         backgroundUrl: scene.backgroundUrl,
-        hotspots: scene.hotspots,
+        hotspots: scene.hotspots ?? [],
       };
 
       const successToast =
         (scene.hotspots?.length ?? 0) === 0
           ? "Escena guardada sin hotspots"
           : "Escena guardada";
+      const silent = options?.silentSuccess === true;
 
       // 1) Intentar actualizar siempre
       try {
@@ -121,8 +123,8 @@ export function useSceneEditorApi(
           ...prev,
           scenes: prev.scenes.map((s) => (s.id === scene.id ? editorScene : s)),
         }));
-        toast.success(successToast);
-        return true;
+        if (!silent) toast.success(successToast);
+        return { ok: true, sceneId: updated.id };
       } catch (err) {
         const msg = err instanceof Error ? err.message || "" : String(err ?? "");
         // Si es NOT_FOUND / no existe, probamos a crearla
@@ -138,21 +140,21 @@ export function useSceneEditorApi(
               activeSceneId:
                 prev.activeSceneId === scene.id ? created.id : prev.activeSceneId,
             }));
-            toast.success(successToast);
-            return true;
+            if (!silent) toast.success(successToast);
+            return { ok: true, sceneId: created.id };
           } catch (err2) {
             toast.error(
               err2 instanceof Error
                 ? err2.message || "No se pudo guardar la escena. Reintenta."
                 : "No se pudo guardar la escena. Reintenta."
             );
-            return false;
+            return { ok: false };
           }
         }
         toast.error(
           msg || "No se pudo guardar la escena. Reintenta."
         );
-        return false;
+        return { ok: false };
       }
     },
     [apiMode, isAuthenticated, setStorage]
@@ -192,11 +194,11 @@ export function useSceneEditorApi(
   );
 
   const setActiveSceneApi = useCallback(
-    async (sceneId: string): Promise<boolean> => {
+    async (sceneId: string, options?: { silentSuccess?: boolean }): Promise<boolean> => {
       if (!apiMode || !isAuthenticated) return false;
       try {
         await apiSetActiveScene(sceneId);
-        toast.success("Escena activada en la web");
+        if (options?.silentSuccess !== true) toast.success("Escena activada en la web");
         return true;
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Error al activar");

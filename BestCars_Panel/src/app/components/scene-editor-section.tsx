@@ -193,8 +193,8 @@ export function SceneEditorSection({
     if (!activeScene) return;
     if (apiMode && isAuthenticated) {
       if (isDirty) {
-        const ok = await persistScene(activeScene);
-        if (!ok) {
+        const result = await persistScene(activeScene);
+        if (!result.ok) {
           toast.error("No se pudo guardar la escena antes de duplicar.");
           return;
         }
@@ -337,13 +337,17 @@ export function SceneEditorSection({
 
   const handleSaveAndPublish = async () => {
     if (!activeScene) return;
-    const ok = await persistScene(activeScene);
-    setIsDirty(!ok);
-    if (!ok) return;
-    const finalSceneId = storage.activeSceneId;
-    const activated = await setActiveSceneApi(finalSceneId);
+    const result = await persistScene(activeScene, { silentSuccess: true });
+    if (!result.ok) {
+      setIsDirty(true);
+      return;
+    }
+    setIsDirty(false);
+    const finalSceneId = result.sceneId;
+    const activated = await setActiveSceneApi(finalSceneId, { silentSuccess: true });
     if (activated) {
       setStorage((prev) => ({ ...prev, webActiveSceneId: finalSceneId }));
+      toast.success("Guardado y publicado");
     }
   };
 
