@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 40" role="img" aria-label="Best Cars">
+  <defs>
+    <linearGradient id="bc-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="50%" stop-color="#22c55e" />
+      <stop offset="100%" stop-color="#a855f7" />
+    </linearGradient>
+  </defs>
+  <rect x="0" y="8" width="220" height="24" rx="12" fill="url(#bc-gradient)" opacity="0.04" />
+  <path
+    d="M10 26c2.2-6.5 8-11 15-11h32c4.5 0 8.7 1.9 11.7 5.3l3.8 4.2c0.4 0.5 0.7 1.2 0.7 1.8 0 1.5-1.2 2.7-2.7 2.7H18"
+    fill="none"
+    stroke="url(#bc-gradient)"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <circle cx="26" cy="26" r="3" fill="#0f172a" stroke="#38bdf8" stroke-width="1.5" />
+  <circle cx="52" cy="26" r="3" fill="#0f172a" stroke="#38bdf8" stroke-width="1.5" />
+  <text
+    x="78"
+    y="24"
+    fill="#e5e7eb"
+    font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+    font-size="16"
+    font-weight="700"
+    letter-spacing="0.08em"
+  >
+    BEST CARS
+  </text>
+  <text
+    x="78"
+    y="32"
+    fill="#9ca3af"
+    font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+    font-size="9"
+    letter-spacing="0.18em"
+  >
+    IBERICA
+  </text>
+</svg>
+

@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { Vehicle } from '../data/mock-data';
 import { ImageWithFallback } from './figma/ImageWithFallback';
+import bestcarsLogo from "../../assets/bestcars-logo.svg";
 
 interface WebPreviewModalProps {
   isOpen: boolean;
@@ -100,7 +101,7 @@ export function WebPreviewModal({ isOpen, onClose, vehicle }: WebPreviewModalPro
             <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
               {/* Logo */}
               <div className="flex items-center gap-4">
-                <img src="/logo.png" alt="Best Cars" className="h-10 w-auto" />
+                <img src={bestcarsLogo} alt="Best Cars" className="h-10 w-auto" />
                 <div className="h-6 w-px bg-white/20" />
                 <div className="px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20">
                   <span className="text-xs text-blue-400">Vista Previa Web</span>
@@ -722,7 +723,7 @@ export function WebPreviewModal({ isOpen, onClose, vehicle }: WebPreviewModalPro
             {/* Footer */}
             <footer className="bg-black border-t border-white/10 py-8 mt-12">
               <div className="max-w-7xl mx-auto px-6 text-center">
-                <img src="/logo.png" alt="Best Cars" className="h-8 w-auto mx-auto mb-4 opacity-60" />
+                <img src={bestcarsLogo} alt="Best Cars" className="h-8 w-auto mx-auto mb-4 opacity-60" />
                 <p className="text-white/40 text-sm">
                   © 2024 Best Cars Ibérica. Todos los derechos reservados.
                 </p>
