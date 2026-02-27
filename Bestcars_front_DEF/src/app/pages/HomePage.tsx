@@ -30,31 +30,37 @@ export function HomePage() {
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([api.getScenes(), api.getActiveScene(), api.getAllVehicles()])
-      .then(([list, active, vList]) => {
-        if (cancelled) return;
-        const scenes = Array.isArray(list) ? (list as Scene[]) : [];
-        setScenesCount(scenes.length);
-        const vehiclesSafe = Array.isArray(vList) ? vList : [];
-        setVehicles(vehiclesSafe);
-        if (scenes.length === 0 || !active?.id) {
-          setHotspots([]);
-          setActiveSceneIndex(0);
-          return;
-        }
-        const idx = scenes.findIndex((s) => s.id === active.id);
-        const index = idx >= 0 ? idx : 0;
-        setActiveSceneIndex(index);
-        const h = sceneHotspots(active as Scene);
-        setHotspots(Array.isArray(h) ? h : []);
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setHotspots([]);
-        }
-      });
+    const load = () => {
+      Promise.all([api.getScenes(), api.getActiveScene(), api.getAllVehicles()])
+        .then(([list, active, vList]) => {
+          if (cancelled) return;
+          const scenes = Array.isArray(list) ? (list as Scene[]) : [];
+          setScenesCount(scenes.length);
+          const vehiclesSafe = Array.isArray(vList) ? vList : [];
+          setVehicles(vehiclesSafe);
+          if (scenes.length === 0 || !active?.id) {
+            setHotspots([]);
+            setActiveSceneIndex(0);
+            return;
+          }
+          const idx = scenes.findIndex((s) => s.id === active.id);
+          const index = idx >= 0 ? idx : 0;
+          setActiveSceneIndex(index);
+          const h = sceneHotspots(active as Scene);
+          setHotspots(Array.isArray(h) ? h : []);
+        })
+        .catch(() => {
+          if (!cancelled) setHotspots([]);
+        });
+    };
+    load();
+    const onVisible = () => {
+      if (document.visibilityState === "visible") load();
+    };
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
       cancelled = true;
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, []);
 

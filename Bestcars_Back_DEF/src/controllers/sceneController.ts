@@ -298,6 +298,13 @@ export const updateScene = async (req: Request, res: Response): Promise<void> =>
   }
 };
 
+/**
+ * PATCH /api/scenes/:id/activate
+ * a) is_active = false en todas las escenas
+ * b) is_active = true en la escena :id
+ * c) devuelve la escena activada
+ * Consistente con índice único parcial scenes_single_active_idx (solo 1 activa).
+ */
 export const setActiveScene = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;

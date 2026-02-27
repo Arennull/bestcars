@@ -21,8 +21,10 @@ export default function DynamicScenePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
-  useEffect(() => {
+  const loadSceneData = () => {
     let cancelled = false;
+    setLoading(true);
+    setError(false);
     Promise.all([api.getScenes(), api.getActiveScene(), api.getAllVehicles()])
       .then(([list, active, vList]) => {
         if (cancelled) return;
@@ -57,6 +59,19 @@ export default function DynamicScenePage() {
     return () => {
       cancelled = true;
     };
+  };
+
+  useEffect(() => {
+    const cancel = loadSceneData();
+    return cancel;
+  }, [indexParam]);
+
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === "visible") loadSceneData();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
   }, [indexParam]);
 
   const safeVehicles = Array.isArray(vehicles) ? vehicles : [];

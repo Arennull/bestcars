@@ -19,6 +19,12 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 
 const router = express.Router();
 
+// Evitar caché: la web debe ver los cambios del panel al volver a la pestaña
+router.use((_req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+  next();
+});
+
 router.get('/', asyncHandler(getAllScenes));
 router.get('/active', asyncHandler(getActiveScene));
 router.get('/:id', asyncHandler(getSceneById));

@@ -63,7 +63,7 @@ export function SceneEditorSection({
     { migrate: (raw) => migrateSceneEditorStorage(raw, initialStorage) }
   );
 
-  const { persistScene, deleteSceneApi, setActiveSceneApi, duplicateSceneApi } = useSceneEditorApi(
+  const { persistScene, deleteSceneApi, setActiveSceneApi, duplicateSceneApi, refreshScenesFromApi } = useSceneEditorApi(
     apiMode,
     isAuthenticated,
     storage,
@@ -95,6 +95,8 @@ export function SceneEditorSection({
     baseX: number;
     baseY: number;
     moved: boolean;
+    rectWidth: number;
+    rectHeight: number;
   } | null>(null);
 
   useEffect(() => {
@@ -260,8 +262,10 @@ export function SceneEditorSection({
       return;
     }
     const rect = (canvasRef.current ?? e.currentTarget).getBoundingClientRect();
-    const x = e.clientX - rect.left - rect.width / 2;
-    const y = e.clientY - rect.top - rect.height / 2;
+    const w = rect.width || 1;
+    const h = rect.height || 1;
+    const x = (e.clientX - rect.left) / w - 0.5;
+    const y = (e.clientY - rect.top) / h - 0.5;
     const newHotspot: Hotspot = {
       id: generateHotspotId(),
       vehicleId: selectedVehicleId,
@@ -276,6 +280,9 @@ export function SceneEditorSection({
   const onHotspotPointerDown = (e: React.PointerEvent, h: Hotspot) => {
     e.stopPropagation();
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    const rect = canvasRef.current?.getBoundingClientRect();
+    const rectWidth = rect?.width || 1;
+    const rectHeight = rect?.height || 1;
     dragRef.current = {
       hotspotId: h.id,
       startX: e.clientX,
@@ -283,6 +290,8 @@ export function SceneEditorSection({
       baseX: h.x,
       baseY: h.y,
       moved: false,
+      rectWidth,
+      rectHeight,
     };
   };
 
@@ -291,10 +300,12 @@ export function SceneEditorSection({
     const dx = e.clientX - dragRef.current.startX;
     const dy = e.clientY - dragRef.current.startY;
     if (Math.abs(dx) > DRAG_THRESHOLD_PX || Math.abs(dy) > DRAG_THRESHOLD_PX) dragRef.current.moved = true;
+    const dxNorm = dx / dragRef.current.rectWidth;
+    const dyNorm = dy / dragRef.current.rectHeight;
     updateSceneHotspots((prev) =>
       prev.map((p) =>
         p.id === dragRef.current!.hotspotId
-          ? { ...p, x: dragRef.current!.baseX + dx, y: dragRef.current!.baseY + dy }
+          ? { ...p, x: dragRef.current!.baseX + dxNorm, y: dragRef.current!.baseY + dyNorm }
           : p
       )
     );
@@ -346,7 +357,7 @@ export function SceneEditorSection({
     const finalSceneId = result.sceneId;
     const activated = await setActiveSceneApi(finalSceneId, { silentSuccess: true });
     if (activated) {
-      setStorage((prev) => ({ ...prev, webActiveSceneId: finalSceneId }));
+      await refreshScenesFromApi();
       toast.success("Guardado y publicado");
     }
   };
@@ -645,7 +656,10 @@ export function SceneEditorSection({
                     key={h.id}
                     className={`absolute left-1/2 top-1/2 select-none scene-editor-hotspot ${isSelected ? "scene-editor-hotspot--selected" : ""}`}
                     style={{
-                      transform: `translate(-50%, -50%) translate(${h.x}px, ${h.y}px)`,
+                      transform:
+                        Math.abs(h.x) <= 1 && Math.abs(h.y) <= 1
+                          ? `translate(-50%, -50%) translate(${h.x * 100}%, ${h.y * 100}%)`
+                          : `translate(-50%, -50%) translate(${h.x}px, ${h.y}px)`,
                       cursor: "grab",
                     }}
                     onPointerDown={(e) => onHotspotPointerDown(e, h)}

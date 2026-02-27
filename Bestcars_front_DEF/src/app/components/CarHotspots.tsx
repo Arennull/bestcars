@@ -21,6 +21,10 @@ export default function CarHotspots({ hotspots, vehicles }: CarHotspotsProps) {
         const vehicle = vehicleMap.get(h.vehicleId);
         if (!vehicle) return null;
         const label = vehicle.title ?? vehicle.id;
+        const isNormalized = Math.abs(h.x) <= 1 && Math.abs(h.y) <= 1;
+        const translate = isNormalized
+          ? `translate(-50%, -50%) translate(${h.x * 100}%, ${h.y * 100}%)`
+          : `translate(-50%, -50%) translate(${h.x}px, ${h.y}px)`;
         return (
           <Link
             key={h.id}
@@ -29,7 +33,7 @@ export default function CarHotspots({ hotspots, vehicles }: CarHotspotsProps) {
             style={{
               top: "50%",
               left: "50%",
-              transform: `translate(-50%, -50%) translate(${h.x}px, ${h.y}px)`,
+              transform: `${translate}`,
               animationDelay: `${index * 0.15}s`,
             }}
             aria-label={label}

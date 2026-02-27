@@ -19,6 +19,10 @@ export default function SceneHotspots({ hotspots = [], vehicles = [] }: SceneHot
       {safeHotspots.map((h) => {
         const vehicle = vehicleMap.get(h.vehicleId);
         if (!vehicle) return null;
+        const isNormalized = Math.abs(h.x) <= 1 && Math.abs(h.y) <= 1;
+        const translate = isNormalized
+          ? `translate(-50%, -50%) translate(${h.x * 100}%, ${h.y * 100}%)`
+          : `translate(-50%, -50%) translate(${h.x}px, ${h.y}px)`;
         return (
           <Link
             key={h.id}
@@ -27,7 +31,7 @@ export default function SceneHotspots({ hotspots = [], vehicles = [] }: SceneHot
             style={{
               left: "50%",
               top: "50%",
-              transform: `translate(-50%, -50%) translate(${h.x}px, ${h.y}px)`,
+              transform: translate,
             }}
             aria-label={vehicle.title ?? vehicle.id}
           >

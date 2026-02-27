@@ -232,5 +232,29 @@ export function useSceneEditorApi(
     [apiMode, isAuthenticated, setStorage]
   );
 
-  return { loading, persistScene, deleteSceneApi, setActiveSceneApi, duplicateSceneApi };
+  /** Refresca cache local: GET /api/scenes y GET /api/scenes/active (tras Guardar y publicar). */
+  const refreshScenesFromApi = useCallback(async () => {
+    if (!apiMode || !isAuthenticated) return;
+    try {
+      const [scenes, activeSceneFromWeb] = await Promise.all([getScenes(), getActiveScene()]);
+      const editorScenes = scenes.map(apiSceneToEditorScene);
+      const activeId = activeSceneFromWeb?.id ?? scenes.find((s: ApiScene) => s.isActive)?.id ?? scenes[0]?.id;
+      const ordered =
+        activeId != null && editorScenes.length > 1
+          ? [
+              ...editorScenes.filter((s) => s.id === activeId),
+              ...editorScenes.filter((s) => s.id !== activeId),
+            ]
+          : editorScenes;
+      setStorage((prev) => ({
+        ...prev,
+        scenes: ordered,
+        webActiveSceneId: activeId ?? null,
+      }));
+    } catch {
+      // silenciar; el toast ya se mostró en activate
+    }
+  }, [apiMode, isAuthenticated, setStorage]);
+
+  return { loading, persistScene, deleteSceneApi, setActiveSceneApi, duplicateSceneApi, refreshScenesFromApi };
 }

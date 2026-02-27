@@ -25,43 +25,45 @@ export default function GaragePage() {
   const [, setLogoImageError] = useState(false);
   const [isStockMenuOpen, setIsStockMenuOpen] = useState(() => sceneIndexFromUrl === null || sceneIndexFromUrl === 0);
   const [scenes, setScenes] = useState<Scene[]>([]);
-  const [activeSceneId, setActiveSceneId] = useState<string | null>(null);
+  const [activeSceneFromApi, setActiveSceneFromApi] = useState<Scene | null>(null);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const pageRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
+  const loadScenesData = () => {
     Promise.all([api.getScenes(), api.getActiveScene(), api.getAllVehicles()])
       .then(([sceneList, active, vList]) => {
         const list = Array.isArray(sceneList) ? sceneList : [];
-        setScenes(list.length === 0 && active?.id ? [active] : list);
-        if (active?.id) setActiveSceneId(active.id);
+        setScenes(list.length === 0 && active ? [active] : list);
+        setActiveSceneFromApi(active ?? null);
         setVehicles(Array.isArray(vList) ? vList : []);
       })
       .catch(() => {});
+  };
+
+  useEffect(() => {
+    loadScenesData();
   }, []);
 
-  // Índice de la escena a mostrar:
-  // - Si hay ?scene=N en la URL, usar ese índice.
-  // - Si no hay query, usar la escena activa del backend si existe; si no, la 0.
-  const activeIndexFromBackend =
-    activeSceneId && scenes.length > 0
-      ? Math.max(
-          0,
-          scenes.findIndex((s) => s.id === activeSceneId)
-        )
-      : 0;
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === "visible") loadScenesData();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, []);
+
+  // Escena a mostrar:
+  // - Sin ?scene= → escena activa del API (GET /api/scenes/active); si no hay, fallback a scenes[0].
+  // - Con ?scene=N → escena por índice, con fallback a activa o scenes[0].
+  const activeScene: Scene | null =
+    sceneIndexFromUrl === null
+      ? (activeSceneFromApi ?? scenes[0] ?? null)
+      : (scenes[Math.min(sceneIndexFromUrl, Math.max(0, scenes.length - 1))] ?? activeSceneFromApi ?? scenes[0] ?? null);
 
   const currentSceneIndex =
     sceneIndexFromUrl !== null
       ? Math.min(sceneIndexFromUrl, Math.max(0, scenes.length - 1))
-      : activeIndexFromBackend;
-
-  const activeScene =
-    scenes[currentSceneIndex]?.backgroundUrl
-      ? scenes[currentSceneIndex]
-      : scenes[activeIndexFromBackend]?.backgroundUrl
-        ? scenes[activeIndexFromBackend]
-        : scenes[0] ?? null;
+      : (activeSceneFromApi && scenes.length > 0 ? Math.max(0, scenes.findIndex((s) => s.id === activeSceneFromApi.id)) : 0);
 
   const goToScene = (index: number) => {
     const next = Math.max(0, Math.min(index, scenes.length - 1));
@@ -88,16 +90,16 @@ export default function GaragePage() {
   const hotspots = sceneHotspots(activeScene);
   const safeHotspots = Array.isArray(hotspots) ? hotspots : [];
 
-  // El fondo del garaje usa scene.backgroundUrl si existe; si no, la ilustración local.
+  // Fondo: scene.backgroundUrl si existe; si no, ilustración local.
   const garageBackground =
-    activeScene?.backgroundUrl && activeScene.backgroundUrl.trim().length > 0
+    activeScene?.backgroundUrl?.trim()
       ? activeScene.backgroundUrl
       : garageImage;
-  const showScene = safeVehicles.length > 0;
+  const showScene = !!activeScene;
 
   useEffect(() => {
-    if (showScene) setGarageImageLoaded(true);
-  }, [showScene]);
+    if (showScene || activeScene) setGarageImageLoaded(true);
+  }, [showScene, activeScene]);
 
   return (
     <div className="garage-page" ref={pageRef}>
@@ -182,6 +184,20 @@ export default function GaragePage() {
           </button>
         </div>
       )}
+      {/* Actualizar escena: refetch para ver cambios del panel (temporal) */}
+      <button
+        type="button"
+        onClick={() => loadScenesData()}
+        className="fixed top-14 right-6 px-4 py-2 border border-white/60 text-white/90 bg-transparent rounded-sm transition-all duration-200 hover:bg-white/10 text-sm z-50"
+        style={{
+          fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif',
+          fontWeight: 500,
+          letterSpacing: '0.02em',
+        }}
+        aria-label="Actualizar escena"
+      >
+        Actualizar escena
+      </button>
       {!isStockMenuOpen && (
         <button
           type="button"

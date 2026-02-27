@@ -81,3 +81,11 @@
 - **Sin escenas:** En `/escena` o `/escena?index=1` sin datos en backend → mensaje "No hay escena disponible." y enlace a inicio.  
 - **Recargar panel:** Tras guardar, recargar el panel y comprobar que la escena y los hotspots siguen (desde DB).  
 - **Home sin tocar:** Verificar que en Home los hotspots siguen siendo los de la escena activa y que no se ha cambiado lógica de CarHotspots.
+
+---
+
+## Si los cambios del editor no se ven en la web
+
+- **Refetch al volver a la pestaña:** Home, Garage y Escena 2 vuelven a pedir escenas/activa al API cuando la pestaña pasa a estar visible (p. ej. al volver desde el panel). Si no se actualizan, cambia a la pestaña de la web y vuelve a entrar en la página o recarga (F5).
+- **API en producción:** La web debe llamar al mismo backend que el panel. En el despliegue de la web (Railway/Vite) configura **VITE_API_URL** con la URL del backend (ej. `https://bestcars-api-production.up.railway.app`). Sin ella, la web usa `http://localhost:3001` y en producción no verá datos.
+- **Backend:** Las rutas GET de escenas envían `Cache-Control: no-store` para que no se cacheen respuestas.
