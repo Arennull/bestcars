@@ -2,7 +2,7 @@
  * Modal de detalle completo de un vehículo.
  * Permite editar descripción, estado, reordenar imágenes y ver métricas.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, memo } from "react";
 import { motion } from "motion/react";
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
@@ -26,20 +26,36 @@ interface DraggableImageProps {
   index: number;
   moveImage: (dragIndex: number, hoverIndex: number) => void;
   onRemove?: (index: number) => void;
+  onDragEnd?: () => void;
 }
 
-function DraggableImage({ image, index, moveImage, onRemove }: DraggableImageProps) {
-  const [{ isDragging }, drag] = useDrag({
+interface InternalDragItem {
+  index: number;
+}
+
+const DraggableImage = memo(function DraggableImage({
+  image,
+  index,
+  moveImage,
+  onRemove,
+  onDragEnd,
+}: DraggableImageProps) {
+  const [{ isDragging }, drag] = useDrag<InternalDragItem>({
     type: 'image',
     item: { index },
+    end: () => {
+      if (onDragEnd) {
+        onDragEnd();
+      }
+    },
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
   });
 
-  const [, drop] = useDrop({
+  const [, drop] = useDrop<InternalDragItem>({
     accept: 'image',
-    hover: (item: { index: number }) => {
+    hover: (item) => {
       if (item.index !== index) {
         moveImage(item.index, index);
         item.index = index;
@@ -79,7 +95,7 @@ function DraggableImage({ image, index, moveImage, onRemove }: DraggableImagePro
       </div>
     </motion.div>
   );
-}
+});
 
 const defaultSpecs = {
   motor: '',
@@ -119,14 +135,25 @@ export function VehicleDetail({ vehicle, onClose, onUpdate, onWebPreview, onDele
     setTags(vehicle.tags ?? []);
   }, [vehicle]);
 
-  /** Reordena las imágenes de la galería */
-  const moveImage = (dragIndex: number, hoverIndex: number) => {
-    const updatedImages = [...images];
-    const [draggedItem] = updatedImages.splice(dragIndex, 1);
-    updatedImages.splice(hoverIndex, 0, draggedItem);
-    setImages(updatedImages);
-    onUpdate(vehicle.id, { images: updatedImages });
-  };
+  /** Reordena las imágenes de la galería (solo estado local durante el drag) */
+  const moveImage = useCallback((dragIndex: number, hoverIndex: number) => {
+    if (dragIndex === hoverIndex) return;
+    setImages((prev) => {
+      const updatedImages = [...prev];
+      const [draggedItem] = updatedImages.splice(dragIndex, 1);
+      updatedImages.splice(hoverIndex, 0, draggedItem);
+      return updatedImages;
+    });
+  }, []);
+
+  /** Persiste el orden actual de imágenes una sola vez (por ejemplo al soltar el drag) */
+  const commitImagesOrder = useCallback(() => {
+    if (!images || !images.length) return;
+    const current = images.join('|');
+    const original = (vehicle.images ?? []).join('|');
+    if (current === original) return;
+    onUpdate(vehicle.id, { images });
+  }, [images, vehicle.id, vehicle.images, onUpdate]);
 
   /** Elimina una imagen de la galería */
   const handleRemoveImage = (index: number) => {
@@ -318,6 +345,9 @@ export function VehicleDetail({ vehicle, onClose, onUpdate, onWebPreview, onDele
                         index={index}
                         moveImage={moveImage}
                         onRemove={handleRemoveImage}
+                        // Persistimos el orden solo al final del drag (no en cada hover)
+                        // para evitar llamadas excesivas a la API.
+                        onDragEnd={commitImagesOrder}
                       />
                     ))}
                     {/* Botón + para añadir imagen */}
