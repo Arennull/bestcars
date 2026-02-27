@@ -1,14 +1,12 @@
 /* Mismo estilo que los botones sobre los coches en la web (CarHotspots: dot + ring + label) */
 /* Área mínima 44px para que arrastrar funcione bien (touch y pointer) */
 .scene-editor-hotspot {
-  position: relative;
+  position: absolute;
   display: flex;
   align-items: center;
   justify-content: center;
   width: 44px;
   height: 44px;
-  margin-left: -22px;
-  margin-top: -22px;
   touch-action: none;
   user-select: none;
 }

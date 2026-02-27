@@ -254,11 +254,22 @@ export const updateScene = async (req: Request, res: Response): Promise<void> =>
         updateData.isActive = Boolean(body.isActive);
         if (updateData.isActive) await prisma.scene.updateMany({ data: { isActive: false } });
       }
-      const scene = await prisma.scene.update({
-        where: { id },
-        data: updateData,
-      });
-      res.json(sceneToJson(scene));
+      try {
+        const scene = await prisma.scene.update({
+          where: { id },
+          data: updateData,
+        });
+        res.json(sceneToJson(scene));
+      } catch (dbErr: unknown) {
+        const code = (dbErr as { code?: string })?.code;
+        if (code === 'P2025') {
+          res.status(404).json({
+            error: { message: 'Scene not found', code: 'NOT_FOUND' },
+          });
+        } else {
+          throw dbErr;
+        }
+      }
       return;
     }
 

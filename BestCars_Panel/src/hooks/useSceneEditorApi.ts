@@ -1,10 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import type { SceneEditorStorage, Scene, Hotspot } from "../app/types/scene-editor";
-import { createEmptyScene } from "../app/types/scene-editor";
 import {
   getScenes,
-  getActiveScene,
   createScene as apiCreateScene,
   updateScene as apiUpdateScene,
   deleteScene as apiDeleteScene,
@@ -62,28 +60,20 @@ export function useSceneEditorApi(
     let cancelled = false;
     setLoading(true);
 
-    Promise.all([getScenes(), getActiveScene()])
-      .then(([scenes, activeSceneFromWeb]) => {
+    getScenes()
+      .then((scenes) => {
         if (cancelled) return;
         if (scenes.length === 0) return;
 
         const editorScenes = scenes.map(apiSceneToEditorScene);
-        const activeId = activeSceneFromWeb?.id ?? scenes.find((s) => s.isActive)?.id ?? scenes[0]?.id;
-        const ordered =
-          activeId != null && editorScenes.length > 1
-            ? [
-                ...editorScenes.filter((s) => s.id === activeId),
-                ...editorScenes.filter((s) => s.id !== activeId),
-              ]
-            : editorScenes;
-        const firstId = ordered[0]?.id;
+        const principalId = editorScenes[0]?.id;
         setStorage((prev) => ({
           ...prev,
-          scenes: ordered,
-          activeSceneId: firstId ?? prev.activeSceneId,
+          scenes: editorScenes,
+          activeSceneId: principalId ?? prev.activeSceneId,
           activeHotspotId: prev.activeHotspotId,
           previewUrl: prev.previewUrl,
-          webActiveSceneId: activeId ?? null,
+          webActiveSceneId: principalId ?? null,
         }));
       })
       .catch((err) => {
@@ -163,32 +153,26 @@ export function useSceneEditorApi(
   const deleteSceneApi = useCallback(
     async (sceneId: string) => {
       if (!apiMode || !isAuthenticated) return;
-      if (sceneId.startsWith("scene_")) return;
 
       try {
         await apiDeleteScene(sceneId);
-        setStorage((prev) => {
-          const next = prev.scenes.filter((s) => s.id !== sceneId);
-          if (next.length === 0) {
-            const fallback = createEmptyScene({ name: "Escena 1", backgroundUrl: "" });
-            return {
-              ...prev,
-              scenes: [fallback],
-              activeSceneId: fallback.id,
-              activeHotspotId: null,
-            };
-          }
-          return {
-            ...prev,
-            scenes: next,
-            activeSceneId: prev.activeSceneId === sceneId ? next[0].id : prev.activeSceneId,
-            activeHotspotId: prev.activeHotspotId,
-          };
-        });
-        toast.success("Escena eliminada");
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Error al eliminar");
+        return;
       }
+
+      setStorage((prev) => {
+        const next = prev.scenes.filter((s) => s.id !== sceneId);
+        const principalId = next[0]?.id ?? null;
+        return {
+          ...prev,
+          scenes: next,
+          activeSceneId: prev.activeSceneId === sceneId ? principalId : prev.activeSceneId,
+          activeHotspotId: prev.activeSceneId === sceneId ? null : prev.activeHotspotId,
+          webActiveSceneId: principalId,
+        };
+      });
+      toast.success("Escena eliminada");
     },
     [apiMode, isAuthenticated, setStorage]
   );
@@ -232,27 +216,20 @@ export function useSceneEditorApi(
     [apiMode, isAuthenticated, setStorage]
   );
 
-  /** Refresca cache local: GET /api/scenes y GET /api/scenes/active (tras Guardar y publicar). */
+  /** Refresca cache local: GET /api/scenes (tras Guardar). */
   const refreshScenesFromApi = useCallback(async () => {
     if (!apiMode || !isAuthenticated) return;
     try {
-      const [scenes, activeSceneFromWeb] = await Promise.all([getScenes(), getActiveScene()]);
+      const scenes = await getScenes();
       const editorScenes = scenes.map(apiSceneToEditorScene);
-      const activeId = activeSceneFromWeb?.id ?? scenes.find((s: ApiScene) => s.isActive)?.id ?? scenes[0]?.id;
-      const ordered =
-        activeId != null && editorScenes.length > 1
-          ? [
-              ...editorScenes.filter((s) => s.id === activeId),
-              ...editorScenes.filter((s) => s.id !== activeId),
-            ]
-          : editorScenes;
+      const principalId = editorScenes[0]?.id;
       setStorage((prev) => ({
         ...prev,
-        scenes: ordered,
-        webActiveSceneId: activeId ?? null,
+        scenes: editorScenes,
+        webActiveSceneId: principalId ?? null,
       }));
     } catch {
-      // silenciar; el toast ya se mostró en activate
+      // silenciar
     }
   }, [apiMode, isAuthenticated, setStorage]);
 

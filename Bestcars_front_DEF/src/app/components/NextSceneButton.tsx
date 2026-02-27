@@ -18,11 +18,17 @@ export function NextSceneButton({
   if (totalScenes < 2 || isStockMenuOpen || isTermsOpen) return null;
 
   const nextIndex = (sceneIndex + 1) % totalScenes;
-  const label = totalScenes > 2 ? "Escena " + (nextIndex + 1) : "Ver otra escena";
+  const isBackToGarage = nextIndex === 0;
+  const destination = isBackToGarage ? "/garage" : "/escena?index=" + nextIndex;
+  const label = isBackToGarage
+    ? "Volver al garaje"
+    : totalScenes > 3
+      ? "Escena " + (nextIndex + 1)
+      : "Siguiente escena";
 
   return (
     <Link
-      to={"/escena?index=" + nextIndex}
+      to={destination}
       className="next-scene-btn"
       aria-label={label}
     >

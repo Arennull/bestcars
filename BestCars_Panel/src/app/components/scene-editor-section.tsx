@@ -16,7 +16,6 @@ import {
   type Hotspot,
   type Scene,
   type SceneEditorStorage,
-  createEmptyScene,
   generateHotspotId,
   migrateSceneEditorStorage,
 } from "../types/scene-editor";
@@ -34,7 +33,7 @@ function nowIso(): string {
 }
 
 const DEFAULT_PREVIEW_URL = "http://localhost:5173/scene-preview";
-const SCENE_PRINCIPAL_IMAGE_URL = "/scene-principal-bestcars.png";
+const SCENE_PRINCIPAL_IMAGE_URL = "/home-default.png";
 const DRAG_THRESHOLD_PX = 5;
 
 export function SceneEditorSection({
@@ -43,19 +42,13 @@ export function SceneEditorSection({
   apiMode = false,
   isAuthenticated = false,
 }: SceneEditorSectionProps) {
-  const initialStorage: SceneEditorStorage = useMemo(() => {
-    const scene = createEmptyScene({
-      name: "Escena 1",
-      backgroundUrl: SCENE_PRINCIPAL_IMAGE_URL,
-    });
-    return {
-      scenes: [scene],
-      activeSceneId: scene.id,
-      activeHotspotId: null,
-      previewUrl: DEFAULT_PREVIEW_URL,
-      webActiveSceneId: null,
-    };
-  }, []);
+  const initialStorage: SceneEditorStorage = useMemo(() => ({
+    scenes: [],
+    activeSceneId: null,
+    activeHotspotId: null,
+    previewUrl: DEFAULT_PREVIEW_URL,
+    webActiveSceneId: null,
+  }), []);
 
   const [storage, setStorage] = useLocalStorageState<SceneEditorStorage>(
     "bestcars_scene_editor_state",
@@ -63,7 +56,7 @@ export function SceneEditorSection({
     { migrate: (raw) => migrateSceneEditorStorage(raw, initialStorage) }
   );
 
-  const { persistScene, deleteSceneApi, setActiveSceneApi, duplicateSceneApi, refreshScenesFromApi } = useSceneEditorApi(
+  const { persistScene, deleteSceneApi, duplicateSceneApi } = useSceneEditorApi(
     apiMode,
     isAuthenticated,
     storage,
@@ -100,23 +93,12 @@ export function SceneEditorSection({
     rectHeight: number;
   } | null>(null);
 
-  useEffect(() => {
-    if (!activeScene) {
-      const fallback = createEmptyScene({ name: "Escena 1", backgroundUrl: "" });
-      setStorage((prev) => ({
-        scenes: [fallback],
-        activeSceneId: fallback.id,
-        activeHotspotId: null,
-        previewUrl: prev.previewUrl ?? DEFAULT_PREVIEW_URL,
-        webActiveSceneId: prev.webActiveSceneId ?? null,
-      }));
-    }
-  }, [activeScene, setStorage, storage.previewUrl, storage.webActiveSceneId]);
+  // No se crea fallback local: las escenas solo vienen de la base de datos.
 
-  const displayBackgroundUrl =
-    activeScene?.backgroundUrl ||
-    (webActiveScene?.backgroundUrl ?? "") ||
-    (storage.webActiveSceneId === activeScene?.id ? SCENE_PRINCIPAL_IMAGE_URL : "");
+  const isWebActiveScene = !!(storage.webActiveSceneId && storage.webActiveSceneId === activeScene?.id);
+  const displayBackgroundUrl = isWebActiveScene
+    ? SCENE_PRINCIPAL_IMAGE_URL
+    : (activeScene?.backgroundUrl ?? "");
 
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
   const selectedVehicle = useMemo(
@@ -161,35 +143,29 @@ export function SceneEditorSection({
   };
 
   const createScene = async (name: string, backgroundUrl: string) => {
-    const sceneName = name.trim() || `Escena ${scenes.length + 1}`;
-    const sceneBg = backgroundUrl.trim();
-    if (apiMode && isAuthenticated) {
-      try {
-        const created = await apiCreateScene({
-          name: sceneName,
-          backgroundUrl: sceneBg,
-          hotspots: [],
-        });
-        const editorScene = apiSceneToEditorScene(created);
-        setStorage((prev) => ({
-          ...prev,
-          scenes: [...prev.scenes, editorScene],
-          activeSceneId: editorScene.id,
-          activeHotspotId: null,
-        }));
-        toast.success("Escena creada");
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Error al crear");
-      }
+    if (!apiMode || !isAuthenticated) {
+      toast.error("Debes estar autenticado para crear escenas.");
       return;
     }
-    const newScene = createEmptyScene({ name: sceneName, backgroundUrl: sceneBg });
-    setStorage((prev) => ({
-      ...prev,
-      scenes: [...prev.scenes, newScene],
-      activeSceneId: newScene.id,
-      activeHotspotId: null,
-    }));
+    const sceneName = name.trim() || `Escena ${scenes.length + 1}`;
+    const sceneBg = backgroundUrl.trim();
+    try {
+      const created = await apiCreateScene({
+        name: sceneName,
+        backgroundUrl: sceneBg,
+        hotspots: [],
+      });
+      const editorScene = apiSceneToEditorScene(created);
+      setStorage((prev) => ({
+        ...prev,
+        scenes: [...prev.scenes, editorScene],
+        activeSceneId: editorScene.id,
+        activeHotspotId: null,
+      }));
+      toast.success("Escena creada");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Error al crear");
+    }
   };
 
   const handleDuplicateScene = async () => {
@@ -231,28 +207,7 @@ export function SceneEditorSection({
       return;
     }
     if (!window.confirm(`¿Eliminar la escena "${activeScene.name}"?`)) return;
-    if (apiMode && isAuthenticated) {
-      deleteSceneApi(activeScene.id);
-      return;
-    }
-    setStorage((prev) => {
-      const nextScenes = prev.scenes.filter((s) => s.id !== activeScene.id);
-      if (nextScenes.length === 0) {
-        const fallback = createEmptyScene({ name: "Escena 1", backgroundUrl: "" });
-        return {
-          ...prev,
-          scenes: [fallback],
-          activeSceneId: fallback.id,
-          activeHotspotId: null,
-        };
-      }
-      return {
-        ...prev,
-        scenes: nextScenes,
-        activeSceneId: nextScenes[0].id,
-        activeHotspotId: null,
-      };
-    });
+    deleteSceneApi(activeScene.id);
   };
 
   const handleCanvasClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -313,12 +268,7 @@ export function SceneEditorSection({
 
     const onDocPointerUpOrCancel = (ev: PointerEvent) => {
       if (ev.pointerId !== e.pointerId) return;
-      if (dragRef.current) {
-        if (!dragRef.current.moved) {
-          setStorage((prev) => ({ ...prev, activeHotspotId: dragRef.current!.hotspotId }));
-        }
-        dragRef.current = null;
-      }
+      dragRef.current = null;
       document.removeEventListener("pointermove", onDocPointerMove);
       document.removeEventListener("pointerup", onDocPointerUpOrCancel);
       document.removeEventListener("pointercancel", onDocPointerUpOrCancel);
@@ -327,11 +277,6 @@ export function SceneEditorSection({
     document.addEventListener("pointermove", onDocPointerMove);
     document.addEventListener("pointerup", onDocPointerUpOrCancel);
     document.addEventListener("pointercancel", onDocPointerUpOrCancel);
-  };
-
-  const onHotspotClick = (e: React.MouseEvent, h: Hotspot) => {
-    e.stopPropagation();
-    setStorage((prev) => ({ ...prev, activeHotspotId: h.id }));
   };
 
   const centerHotspot = (h: Hotspot) => {
@@ -365,14 +310,7 @@ export function SceneEditorSection({
         return;
       }
       setIsDirty(false);
-      const finalSceneId = result.sceneId;
-      const activated = await setActiveSceneApi(finalSceneId, { silentSuccess: true });
-      if (activated) {
-        await refreshScenesFromApi();
-        toast.success("Guardado y publicado. La web mostrará esta escena en el garaje.");
-      } else {
-        toast.warning("Escena guardada pero no se pudo activar para la web. Intenta de nuevo.");
-      }
+      toast.success(isWebActiveScene ? "Escena principal guardada." : "Escena guardada.");
     } finally {
       setPublishLoading(false);
     }
@@ -400,7 +338,7 @@ export function SceneEditorSection({
       ? {
           id: activeScene.id,
           name: activeScene.name,
-          backgroundUrl: displayBackgroundUrl,
+          backgroundUrl: isWebActiveScene ? "" : displayBackgroundUrl,
           hotspots: activeHotspots,
         }
       : null;
@@ -414,7 +352,7 @@ export function SceneEditorSection({
         vehicles: vehiclesForPreview,
       },
     };
-  }, [activeScene, displayBackgroundUrl, storage.activeSceneId, vehicles]);
+  }, [activeScene, displayBackgroundUrl, isWebActiveScene, storage.activeSceneId, vehicles]);
 
   const sendPreviewState = useCallback(() => {
     try {
@@ -486,21 +424,6 @@ export function SceneEditorSection({
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          {apiMode && isAuthenticated && activeScene && (
-            <button
-              onClick={() => {
-                setActiveSceneApi(activeScene.id).then((ok) => {
-                  if (ok) {
-                    setStorage((prev) => ({ ...prev, webActiveSceneId: activeScene.id }));
-                  }
-                });
-              }}
-              className="px-4 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all text-emerald-200 text-sm flex items-center gap-2"
-              title="Mostrar esta escena en la web"
-            >
-              Activar en web
-            </button>
-          )}
           <button
             onClick={handleDuplicateScene}
             className="px-4 py-2 rounded-xl bg-white/[0.03] border border-white/10 hover:border-white/20 hover:bg-white/[0.05] transition-all text-white/80 text-sm flex items-center gap-2"
@@ -644,7 +567,7 @@ export function SceneEditorSection({
                   onClick={handleSaveAndPublish}
                   disabled={publishLoading || !apiMode || !isAuthenticated}
                   className="px-3 py-2 rounded-xl bg-blue-500/15 border border-blue-500/30 hover:bg-blue-500/25 disabled:opacity-60 disabled:cursor-not-allowed transition-all text-white/90 text-sm flex items-center gap-2 min-w-[180px] justify-center"
-                  title={apiMode && isAuthenticated ? "Guarda la escena en el servidor y la deja visible en /garage" : "Inicia sesión y conecta el backend para guardar"}
+                  title={apiMode && isAuthenticated ? "Guarda la escena en el servidor" : "Inicia sesión y conecta el backend para guardar"}
                 >
                   {publishLoading ? (
                     <>
@@ -654,7 +577,7 @@ export function SceneEditorSection({
                   ) : (
                     <>
                       <Save className="w-4 h-4 shrink-0" />
-                      Guardar y publicar
+                      {isWebActiveScene ? "Guardar escena" : "Guardar y publicar"}
                     </>
                   )}
                 </button>
@@ -665,11 +588,16 @@ export function SceneEditorSection({
             </p>
             <div
               ref={canvasRef}
-              className="relative w-full aspect-[16/9] bg-black cursor-crosshair"
+              className="relative w-full bg-black cursor-crosshair"
               style={{
-                backgroundImage: displayBackgroundUrl ? `url(${displayBackgroundUrl})` : undefined,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
+                aspectRatio: "5803 / 3264",
+                ...(displayBackgroundUrl
+                  ? {
+                      backgroundImage: `url(${displayBackgroundUrl})`,
+                      backgroundSize: "cover",
+                      backgroundPosition: "center",
+                    }
+                  : {}),
               }}
               onClick={handleCanvasClick}
             >
@@ -682,16 +610,14 @@ export function SceneEditorSection({
                 return (
                   <div
                     key={h.id}
-                    className={`absolute left-1/2 top-1/2 select-none scene-editor-hotspot ${isSelected ? "scene-editor-hotspot--selected" : ""}`}
+                    className={`absolute select-none scene-editor-hotspot ${isSelected ? "scene-editor-hotspot--selected" : ""}`}
                     style={{
-                      transform:
-                        Math.abs(h.x) <= 1 && Math.abs(h.y) <= 1
-                          ? `translate(-50%, -50%) translate(${h.x * 100}%, ${h.y * 100}%)`
-                          : `translate(-50%, -50%) translate(${h.x}px, ${h.y}px)`,
+                      left: `${(0.5 + h.x) * 100}%`,
+                      top: `${(0.5 + h.y) * 100}%`,
+                      transform: "translate(-50%, -50%)",
                       cursor: "grab",
                     }}
                     onPointerDown={(e) => onHotspotPointerDown(e, h)}
-                    onClick={(e) => onHotspotClick(e, h)}
                   >
                     <span className="scene-editor-hotspot-hitarea" aria-hidden="true" />
                     <span className="scene-editor-hotspot-label">
@@ -717,11 +643,12 @@ export function SceneEditorSection({
                 return (
                   <div
                     key={h.id}
-                    className={`rounded-xl border p-2 transition-all ${
+                    className={`rounded-xl border p-2 transition-all cursor-pointer ${
                       isSelected
                         ? "bg-blue-500/10 border-blue-500/30"
                         : "bg-white/[0.02] border-white/10 hover:border-white/20"
                     }`}
+                    onClick={() => setStorage((prev) => ({ ...prev, activeHotspotId: h.id }))}
                   >
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-mono text-white/50 shrink-0">#{idx + 1}</span>
@@ -781,28 +708,35 @@ export function SceneEditorSection({
 
           <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4 backdrop-blur-sm space-y-3">
             <h4 className="text-white/80 text-sm">Fondo de la escena</h4>
-            <input
-              value={activeScene?.backgroundUrl ?? ""}
-              onChange={(e) => {
-                if (!activeScene) return;
-                const url = e.target.value;
-                const updated: Scene = {
-                  ...activeScene,
-                  backgroundUrl: url,
-                  updatedAt: nowIso(),
-                };
-                setStorage((prev) => ({
-                  ...prev,
-                  scenes: prev.scenes.map((s) => (s.id === activeScene.id ? updated : s)),
-                }));
-                setIsDirty(true);
-                if (isPotentiallyInvalidBackgroundUrl(url)) {
-                  toast.warning("Para producción usa una URL http(s) o un path absoluto (ej. /mi-fondo.png).");
-                }
-              }}
-              placeholder="URL del fondo"
-              className="w-full px-3 py-2 rounded-xl bg-white/[0.03] border border-white/10 text-white/80 placeholder:text-white/30 focus:outline-none focus:border-blue-500/50"
-            />
+            {isWebActiveScene ? (
+              <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/[0.02] border border-amber-500/20 text-white/50 text-sm">
+                <Lock className="w-4 h-4 text-amber-400 shrink-0" />
+                <span className="truncate">{SCENE_PRINCIPAL_IMAGE_URL}</span>
+              </div>
+            ) : (
+              <input
+                value={activeScene?.backgroundUrl ?? ""}
+                onChange={(e) => {
+                  if (!activeScene) return;
+                  const url = e.target.value;
+                  const updated: Scene = {
+                    ...activeScene,
+                    backgroundUrl: url,
+                    updatedAt: nowIso(),
+                  };
+                  setStorage((prev) => ({
+                    ...prev,
+                    scenes: prev.scenes.map((s) => (s.id === activeScene.id ? updated : s)),
+                  }));
+                  setIsDirty(true);
+                  if (isPotentiallyInvalidBackgroundUrl(url)) {
+                    toast.warning("Para producción usa una URL http(s) o un path absoluto (ej. /mi-fondo.png).");
+                  }
+                }}
+                placeholder="URL del fondo"
+                className="w-full px-3 py-2 rounded-xl bg-white/[0.03] border border-white/10 text-white/80 placeholder:text-white/30 focus:outline-none focus:border-blue-500/50"
+              />
+            )}
           </div>
 
           <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4 backdrop-blur-sm space-y-3">
@@ -817,7 +751,8 @@ export function SceneEditorSection({
               <iframe
                 ref={iframeRef}
                 src={storage.previewUrl}
-                className="w-full aspect-[16/10] bg-black"
+                className="w-full bg-black"
+                style={{ aspectRatio: "5803 / 3264" }}
                 title="Vista previa"
               />
             </div>

@@ -1,9 +1,8 @@
-import React, { useEffect, useState, useCallback } from "react";
-import { api, type Scene, sceneHotspots } from "../../services/api.js";
+import React, { useEffect, useState } from "react";
+import { type Scene, sceneHotspots } from "../../services/api.js";
 import type { Vehicle } from "../../types/vehicle.js";
 import SceneHotspots from "../components/SceneHotspots";
-// @ts-expect-error - Importación de imagen con espacios en el nombre (mismo fondo que Garage)
-import garageImage from "../../assets/Ilustración_sin_título 103.jpg";
+import homeImage from "../../assets/Bestcars-home.png";
 
 interface SceneState {
   scene: Scene | null;
@@ -14,46 +13,7 @@ export default function ScenePreviewPage() {
   const [state, setState] = useState<SceneState>({ scene: null, vehicles: [] });
   const [loading, setLoading] = useState(true);
 
-  const renderScene = useCallback(async (scene: Scene | null) => {
-    if (!scene) {
-      setState((prev) => ({ ...prev, scene: null }));
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const vehicles = await api.getAllVehicles();
-      const vehicleMap = new Map(vehicles.map((v) => [v.id, v]));
-      setState({ scene, vehicles });
-    } catch {
-      setState({ scene, vehicles: [] });
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  // Fetch from API on mount
-  useEffect(() => {
-    let cancelled = false;
-
-    api
-      .getActiveScene()
-      .then((scene) => {
-        if (!cancelled) renderScene(scene);
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setLoading(false);
-          setState({ scene: null, vehicles: [] });
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [renderScene]);
-
-  // Listen for postMessage from panel editor (live preview)
+  // Solo escucha datos del editor vía postMessage (no carga del API)
   useEffect(() => {
     const onMessage = (event: MessageEvent) => {
       const data = event.data;
@@ -62,17 +22,16 @@ export default function ScenePreviewPage() {
       const { scene, vehicles: payloadVehicles } = data.payload ?? {};
       if (scene) {
         setLoading(false);
-        if (Array.isArray(payloadVehicles) && payloadVehicles.length > 0) {
-          setState({ scene: scene as Scene, vehicles: payloadVehicles as Vehicle[] });
-        } else {
-          renderScene(scene as Scene);
-        }
+        setState({
+          scene: scene as Scene,
+          vehicles: Array.isArray(payloadVehicles) ? payloadVehicles as Vehicle[] : [],
+        });
       }
     };
 
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [renderScene]);
+  }, []);
 
   // Tell parent we're ready (panel can send state)
   useEffect(() => {
@@ -95,7 +54,7 @@ export default function ScenePreviewPage() {
   const background =
     scene?.backgroundUrl && scene.backgroundUrl.trim().length > 0
       ? scene.backgroundUrl
-      : garageImage;
+      : homeImage;
 
   if (!scene) {
     return (
@@ -106,15 +65,18 @@ export default function ScenePreviewPage() {
   }
 
   return (
-    <div
-      className="relative w-full min-h-screen bg-black"
-      style={{
-        backgroundImage: `url(${background})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
-    >
-      <SceneHotspots hotspots={safeHotspots} vehicles={safeVehicles} />
+    <div className="w-full h-screen bg-black overflow-hidden">
+      <div
+        className="relative w-full"
+        style={{
+          aspectRatio: "5803 / 3264",
+          backgroundImage: `url(${background})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      >
+        <SceneHotspots hotspots={safeHotspots} vehicles={safeVehicles} />
+      </div>
     </div>
   );
 }

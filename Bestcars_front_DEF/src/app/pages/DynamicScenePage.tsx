@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { api, type Scene, sceneHotspots } from "../../services/api.js";
 import type { Vehicle } from "../../types/vehicle.js";
 import SceneHotspots from "../components/SceneHotspots";
+import NextSceneButton from "../components/NextSceneButton";
 // @ts-expect-error - Imagen con espacios en el nombre (fallback de fondo)
 import fallbackImage from "../../assets/Ilustración_sin_título 103.jpg";
 import "./DynamicScenePage.css";
@@ -25,28 +26,23 @@ export default function DynamicScenePage() {
     let cancelled = false;
     setLoading(true);
     setError(false);
-    Promise.all([api.getScenes(), api.getActiveScene(), api.getAllVehicles()])
-      .then(([list, active, vList]) => {
+    Promise.all([api.getScenes(), api.getAllVehicles()])
+      .then(([list, vList]) => {
         if (cancelled) return;
         const sceneList = Array.isArray(list) ? (list as Scene[]) : [];
         setScenes(sceneList);
         setVehicles(Array.isArray(vList) ? vList : []);
 
-        const activeId = active?.id;
         const byIndex =
           indexParam !== null && indexParam !== ""
             ? Math.max(0, parseInt(indexParam, 10) || 0)
             : null;
 
         let chosen: Scene | null = null;
-        if (sceneList.length === 0) {
-          if (active?.id) chosen = active as Scene;
-        } else if (byIndex !== null && sceneList[byIndex]) {
+        if (byIndex !== null && sceneList[byIndex]) {
           chosen = sceneList[byIndex];
-        } else if (activeId) {
-          chosen = sceneList.find((s) => s.id === activeId) ?? sceneList[0];
         } else {
-          chosen = sceneList[0];
+          chosen = sceneList[0] ?? null;
         }
         setActiveScene(chosen);
       })
@@ -107,23 +103,33 @@ export default function DynamicScenePage() {
     );
   }
 
+  const currentIndex = indexParam !== null ? Math.max(0, parseInt(indexParam, 10) || 0) : 0;
+
   return (
-    <div
-      className="dynamic-scene-page"
-      style={{
-        backgroundImage: `url(${background})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
-    >
-      <Link
-        to="/"
-        className="dynamic-scene-page__home-link"
-        aria-label="Volver al inicio"
+    <div className="dynamic-scene-page">
+      <div
+        className="dynamic-scene-page__canvas"
+        style={{
+          backgroundImage: `url(${background})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
       >
-        Volver al inicio
+        <SceneHotspots hotspots={safeHotspots} vehicles={safeVehicles} />
+      </div>
+      <Link
+        to="/garage"
+        className="dynamic-scene-page__home-link"
+        aria-label="Volver al garaje"
+      >
+        Volver al garaje
       </Link>
-      <SceneHotspots hotspots={safeHotspots} vehicles={safeVehicles} />
+      {scenes.length >= 2 && (
+        <NextSceneButton
+          sceneIndex={currentIndex}
+          totalScenes={scenes.length}
+        />
+      )}
     </div>
   );
 }

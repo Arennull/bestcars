@@ -1,8 +1,24 @@
 .dynamic-scene-page {
   position: relative;
-  width: 100%;
-  min-height: 100vh;
+  width: 100vw;
+  height: 100dvh;
+  overflow: hidden;
   background-color: #000;
+}
+
+.dynamic-scene-page__canvas {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  height: 100dvh;
+  width: calc(100dvh * 16 / 9);
+  overflow: visible;
+}
+
+@media (min-aspect-ratio: 8/5) {
+  .dynamic-scene-page__canvas {
+    width: 100vw;
+    height: calc(100vw * 9 / 16);
+  }
 }
 
 .dynamic-scene-page--loading,

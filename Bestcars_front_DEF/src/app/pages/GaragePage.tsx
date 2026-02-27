@@ -1,12 +1,13 @@
 import React from "react";
 import { useState, useEffect, useRef } from "react";
 import { Loader2 } from "lucide-react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link } from "react-router-dom";
 // @ts-expect-error - Importación de imagen con espacios en el nombre
 import garageImage from "../../assets/Ilustración_sin_título 103.jpg";
 import logoImage from "../../assets/IMG_2007.PNG";
 import { StockMenu } from "../components/StockMenu";
 import SceneHotspots from "../components/SceneHotspots";
+import NextSceneButton from "../components/NextSceneButton";
 import { api, getVehicleImageUrl, type Scene, sceneHotspots } from "../../services/api.js";
 import type { Vehicle } from "../../types/vehicle.js";
 import "./GaragePage.css";
@@ -14,17 +15,12 @@ import "./GaragePage.css";
 const MOBILE_START_POSITION = 50;
 
 export default function GaragePage() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const sceneParam = searchParams.get("scene");
-  const sceneIndexFromUrl = sceneParam !== null ? Math.max(0, parseInt(sceneParam, 10) || 0) : null;
-
   const [garageImageLoaded, setGarageImageLoaded] = useState(false);
   const [logoImageLoaded, setLogoImageLoaded] = useState(false);
   const [garageImageError, setGarageImageError] = useState(false);
   const [, setLogoImageError] = useState(false);
   const [isStockMenuOpen, setIsStockMenuOpen] = useState(true);
   const [scenes, setScenes] = useState<Scene[]>([]);
-  const [activeSceneFromApi, setActiveSceneFromApi] = useState<Scene | null>(null);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [dataError, setDataError] = useState(false);
@@ -33,11 +29,10 @@ export default function GaragePage() {
   const loadScenesData = () => {
     setDataLoading(true);
     setDataError(false);
-    Promise.all([api.getScenes(), api.getActiveScene(), api.getAllVehicles()])
-      .then(([sceneList, active, vList]) => {
+    Promise.all([api.getScenes(), api.getAllVehicles()])
+      .then(([sceneList, vList]) => {
         const list = Array.isArray(sceneList) ? sceneList : [];
-        setScenes(list.length === 0 && active ? [active] : list);
-        setActiveSceneFromApi(active ?? null);
+        setScenes(list);
         setVehicles(Array.isArray(vList) ? vList : []);
       })
       .catch(() => setDataError(true))
@@ -56,13 +51,8 @@ export default function GaragePage() {
     return () => document.removeEventListener("visibilitychange", onVisible);
   }, []);
 
-  // Escena a mostrar:
-  // - Sin ?scene= → escena activa del API (GET /api/scenes/active); si no hay, fallback a scenes[0].
-  // - Con ?scene=N → escena por índice, con fallback a activa o scenes[0].
-  const activeScene: Scene | null =
-    sceneIndexFromUrl === null
-      ? (activeSceneFromApi ?? scenes[0] ?? null)
-      : (scenes[Math.min(sceneIndexFromUrl, Math.max(0, scenes.length - 1))] ?? activeSceneFromApi ?? scenes[0] ?? null);
+  // El garaje siempre muestra la primera escena (la principal) con sus hotspots.
+  const activeScene: Scene | null = scenes[0] ?? null;
 
   useEffect(() => {
     if (pageRef.current) {
@@ -78,30 +68,24 @@ export default function GaragePage() {
   const hotspots = sceneHotspots(activeScene);
   const safeHotspots = Array.isArray(hotspots) ? hotspots : [];
 
-  // Fondo: scene.backgroundUrl si existe; si no, ilustración local.
-  const garageBackground =
-    activeScene?.backgroundUrl?.trim()
-      ? activeScene.backgroundUrl
-      : garageImage;
+  const garageBackground = garageImage;
   const showScene = !!activeScene;
 
-  // Preload background image para no mostrar contenido hasta que esté lista
   useEffect(() => {
-    if (!garageBackground) {
-      setGarageImageLoaded(true);
-      return;
-    }
     setGarageImageLoaded(false);
     const img = new Image();
     img.onload = () => setGarageImageLoaded(true);
-    img.onerror = () => setGarageImageLoaded(true);
-    img.src = typeof garageBackground === "string" ? garageBackground : garageImage;
+    img.onerror = () => {
+      setGarageImageError(true);
+      setGarageImageLoaded(true);
+    };
+    img.src = garageImage;
     return () => {
       img.onload = null;
       img.onerror = null;
       img.src = "";
     };
-  }, [garageBackground]);
+  }, []);
 
   const showLoader = dataLoading || (!garageImageLoaded && !garageImageError);
 
@@ -129,9 +113,6 @@ export default function GaragePage() {
             backgroundImage: `url(${garageBackground})`,
             backgroundSize: "cover",
             backgroundPosition: "center",
-            minHeight: "100vh",
-            width: "100%",
-            position: "relative",
           }}
         >
           {showScene && (
@@ -203,6 +184,13 @@ export default function GaragePage() {
         </button>
       )}
       <StockMenu isOpen={isStockMenuOpen} onOpenChange={setIsStockMenuOpen} hideButton={true} disableClose={false} />
+      {scenes.length >= 2 && activeScene && (
+        <NextSceneButton
+          sceneIndex={Math.max(0, scenes.findIndex((s) => s.id === activeScene.id))}
+          totalScenes={scenes.length}
+          isStockMenuOpen={isStockMenuOpen}
+        />
+      )}
     </div>
   );
 }

@@ -18,7 +18,7 @@ export type Scene = {
 
 export type SceneEditorStorage = {
   scenes: Scene[];
-  activeSceneId: string;
+  activeSceneId: string | null;
   /** ID del hotspot seleccionado en el editor (null = ninguno) */
   activeHotspotId: string | null;
   previewUrl: string;
@@ -124,13 +124,12 @@ export function migrateSceneEditorStorage(
     const fallbackScene = fallback.scenes[0] ?? createEmptyScene({ name: "Escena 1", backgroundUrl: "" });
     scenes = (o.scenes as unknown[]).map((item, i) =>
       migrateScene(item, fallback.scenes[i] ?? fallbackScene)
-    );
-    if (scenes.length === 0) scenes = [createEmptyScene({ name: "Escena 1", backgroundUrl: "" })];
+    ).filter((s) => s && s.id);
   }
 
-  let activeSceneId = typeof o.activeSceneId === "string" ? o.activeSceneId : fallback.activeSceneId;
-  if (!scenes.some((s) => s.id === activeSceneId)) {
-    activeSceneId = scenes[0]?.id ?? fallback.activeSceneId;
+  let activeSceneId: string | null = typeof o.activeSceneId === "string" ? o.activeSceneId : (fallback.activeSceneId ?? null);
+  if (activeSceneId && !scenes.some((s) => s.id === activeSceneId)) {
+    activeSceneId = scenes[0]?.id ?? null;
   }
 
   const activeScene = scenes.find((s) => s.id === activeSceneId);

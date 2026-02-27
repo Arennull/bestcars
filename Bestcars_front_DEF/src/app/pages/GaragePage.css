@@ -23,16 +23,14 @@
   .image-wrapper {
     width: 100vw;
     height: calc(100vw * 9 / 16);
-    min-height: 100vh;
   }
 }
 
 .garage-image {
+  position: relative;
   width: 100%;
   height: 100%;
   display: block;
-  object-fit: cover;
-  object-position: center;
 }
 
 .garage-logo {
