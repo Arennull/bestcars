@@ -1,0 +1,45 @@
+.dynamic-scene-page {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  background-color: #000;
+}
+
+.dynamic-scene-page--loading,
+.dynamic-scene-page--empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background-color: #000;
+}
+
+.dynamic-scene-page__home-link {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 1.5rem;
+  z-index: 50;
+  padding: 0.75rem 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  color: #fff;
+  background: transparent;
+  border-radius: 2px;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  text-decoration: none;
+  transition: background-color 0.2s ease;
+}
+
+.dynamic-scene-page__home-link:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+@media (min-width: 768px) {
+  .dynamic-scene-page__home-link {
+    bottom: auto;
+    top: 1.5rem;
+  }
+}

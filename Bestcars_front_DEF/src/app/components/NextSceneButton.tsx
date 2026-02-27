@@ -22,7 +22,7 @@ export function NextSceneButton({
 
   return (
     <Link
-      to={"/garage?scene=" + nextIndex}
+      to={"/escena?index=" + nextIndex}
       className="next-scene-btn"
       aria-label={label}
     >
