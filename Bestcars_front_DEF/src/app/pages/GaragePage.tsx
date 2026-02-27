@@ -1,6 +1,6 @@
 import React from "react";
 import { useState, useEffect, useRef } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 // @ts-expect-error - Importación de imagen con espacios en el nombre
 import garageImage from "../../assets/Ilustración_sin_título 103.jpg";
@@ -68,12 +68,11 @@ export default function GaragePage() {
     }
   }, [garageImageLoaded, activeScene]);
 
-  // Solo abrir el listado de coches por defecto en la primera escena; en el resto empezar cerrado
+  // Solo abrir el listado por defecto en escena 1; en escenas 2+ empezar cerrado. Al cambiar de escena no dejar el modal "pegado".
   useEffect(() => {
     if (scenes.length === 0) return;
-    const idx = sceneIndexFromUrl !== null ? Math.min(sceneIndexFromUrl, scenes.length - 1) : 0;
-    setIsStockMenuOpen(idx === 0);
-  }, [scenes.length, sceneIndexFromUrl]);
+    setIsStockMenuOpen(currentSceneIndex === 0);
+  }, [scenes.length, currentSceneIndex]);
 
   const vehicleMap = new Map(vehicles.map((v) => [v.id, v]));
   const positions = (activeScene?.positions ?? {}) as Record<string, ScenePosition>;
@@ -185,7 +184,7 @@ export default function GaragePage() {
       </Link>
       {/* Navigate between scenes - same style as Home "Entrar al garaje" / "Siguiente escena" */}
       {scenes.length > 1 && (
-        <div className="garage-scene-nav">
+        <div className="garage-scene-nav" role="navigation" aria-label="Navegación entre escenas">
           <button
             type="button"
             className="garage-scene-nav-btn"
@@ -193,12 +192,8 @@ export default function GaragePage() {
             disabled={currentSceneIndex <= 0}
             aria-label="Escena anterior"
           >
-            <span className="garage-scene-nav-icon garage-scene-nav-prev">
-              <svg width="13" height="11" viewBox="0 0 13 11" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="white">
-                <line x1="1.29" y1="5.46" x2="6.12" y2="0.63" strokeWidth="2" />
-                <path d="M2.71 5.46L6.11 8.86" strokeWidth="2" />
-                <line x1="2.49" y1="5.46" x2="12" y2="5.46" strokeWidth="2" />
-              </svg>
+            <span className="garage-scene-nav-icon">
+              <ChevronLeft className="garage-scene-nav-svg" strokeWidth={2.5} />
             </span>
             <span className="garage-scene-nav-text">Escena anterior</span>
           </button>
@@ -210,11 +205,7 @@ export default function GaragePage() {
             aria-label="Siguiente escena"
           >
             <span className="garage-scene-nav-icon">
-              <svg width="13" height="11" viewBox="0 0 13 11" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="white">
-                <line x1="11.7052" y1="4.77742" x2="6.8748" y2="9.60777" strokeWidth="2" />
-                <path d="M10.2912 4.77745L6.89487 1.38135" strokeWidth="2" />
-                <line x1="10.5151" y1="5.45581" x2="0.998047" y2="5.45581" strokeWidth="2" />
-              </svg>
+              <ChevronRight className="garage-scene-nav-svg" strokeWidth={2.5} />
             </span>
             <span className="garage-scene-nav-text">Siguiente escena</span>
           </button>

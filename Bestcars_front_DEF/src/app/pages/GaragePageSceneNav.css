@@ -37,17 +37,22 @@
 
 .garage-scene-nav-icon {
   position: absolute;
-  top: 6px;
-  left: 5px;
+  top: 50%;
+  left: 6px;
+  transform: translateY(-50%);
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.garage-scene-nav-icon svg {
+.garage-scene-nav-icon svg,
+.garage-scene-nav-svg {
   display: block;
-}
-
-.garage-scene-nav-prev {
-  transform: scaleX(-1);
+  width: 16px;
+  height: 16px;
+  color: white;
+  flex-shrink: 0;
 }
 
 .garage-scene-nav-text {
@@ -91,13 +96,13 @@
   }
 
   .garage-scene-nav-icon {
-    top: 9px;
-    left: 8px;
+    left: 10px;
   }
 
-  .garage-scene-nav-icon svg {
-    width: 18px;
-    height: 15px;
+  .garage-scene-nav-icon svg,
+  .garage-scene-nav-svg {
+    width: 20px;
+    height: 20px;
   }
 
   .garage-scene-nav-text {
