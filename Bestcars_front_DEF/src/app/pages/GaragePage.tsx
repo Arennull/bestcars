@@ -22,7 +22,7 @@ export default function GaragePage() {
   const [logoImageLoaded, setLogoImageLoaded] = useState(false);
   const [garageImageError, setGarageImageError] = useState(false);
   const [, setLogoImageError] = useState(false);
-  const [isStockMenuOpen, setIsStockMenuOpen] = useState(false);
+  const [isStockMenuOpen, setIsStockMenuOpen] = useState(() => sceneIndexFromUrl === null || sceneIndexFromUrl === 0);
   const [scenes, setScenes] = useState<Scene[]>([]);
   const [activeSceneId, setActiveSceneId] = useState<string | null>(null);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
