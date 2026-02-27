@@ -13,8 +13,20 @@ interface ProductHeaderProps {
   vehicleTitle?: string;
 }
 
+/** Formato para mostrar: acepta "125000" o "€125.000" y devuelve "€125.000" */
+function formatPriceDisplay(price: string): string {
+  let s = String(price ?? '').trim().replace(/€/g, '').replace(/\s/g, '');
+  s = s.replace(/\./g, '').replace(',', '.');
+  const num = parseFloat(s);
+  if (s !== '' && !Number.isNaN(num)) {
+    return `€${num.toLocaleString('es-ES', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+  }
+  return String(price ?? '').trim() || price;
+}
+
 export function ProductHeader({ title, year, mileage, price, priceSubtext, tags, onRequestTestDrive, vehicleId: _vehicleId, vehicleTitle: _vehicleTitle }: ProductHeaderProps) {
   const [isInstagramActive, setIsInstagramActive] = useState(false);
+  const displayPrice = formatPriceDisplay(price);
 
   const handleShare = async () => {
     const url = window.location.href;
@@ -163,7 +175,7 @@ export function ProductHeader({ title, year, mileage, price, priceSubtext, tags,
             className="text-blue-400 mb-1"
             style={{ fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.1 }}
           >
-            {price}
+            {displayPrice}
           </div>
           <div style={{ fontSize: 'clamp(11px, 1.2vw, 12px)', fontWeight: 500, color: 'rgba(255, 255, 255, 0.4)' }}>
             {priceSubtext}

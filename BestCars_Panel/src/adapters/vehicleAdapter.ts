@@ -5,12 +5,22 @@ import type { Vehicle } from '../app/data/mock-data';
 import type { ApiVehicle, ApiVehicleCreate, ApiVehicleUpdate } from '../services/api';
 import { getVehicleImageUrl, toApiImageValue } from '../services/api';
 
+/**
+ * Parsea precio desde API/DB: soporta formato antiguo (€125.000 / €125.000,00) y numérico plano.
+ * - "€125.000" → 125000
+ * - "€125.000,00" → 125000
+ * - "125000" → 125000
+ */
 function parsePrice(priceStr: string): number {
-  const num = priceStr.replace(/[^\d,.-]/g, '').replace(',', '');
-  return parseFloat(num) || 0;
+  if (typeof priceStr !== 'string') return 0;
+  let s = priceStr.trim().replace(/€/g, '').replace(/\s/g, '');
+  s = s.replace(/\./g, ''); // separador de miles (es-ES)
+  s = s.replace(',', '.');  // coma decimal a punto
+  const num = parseFloat(s);
+  return Number.isNaN(num) ? 0 : num;
 }
 
-/** Formato de precio para API: preserva decimales (evita perder ceros al recargar en panel) */
+/** Solo para mostrar en UI; no se envía a la API */
 function formatPrice(price: number): string {
   return `€${price.toLocaleString('es-ES', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
 }
@@ -89,7 +99,7 @@ export function panelVehicleToApiCreate(
     title: v.name,
     year: v.year,
     mileage,
-    price: formatPrice(v.price),
+    price: String(v.price),
     priceSubtext: 'IVA Incluido',
     fuelType: v.specs.combustible || undefined,
     seats: undefined,
@@ -116,7 +126,7 @@ export function panelVehicleToApiUpdate(updates: Partial<Vehicle>): ApiVehicleUp
   const out: ApiVehicleUpdate = {};
   if (updates.name !== undefined) out.title = updates.name;
   if (updates.year !== undefined) out.year = updates.year;
-  if (updates.price !== undefined) out.price = formatPrice(updates.price);
+  if (updates.price !== undefined) out.price = String(updates.price);
   if (updates.status !== undefined) out.status = mapStatusToApi(updates.status);
   if (updates.description !== undefined) out.description = updates.description;
   if (updates.images !== undefined) out.images = updates.images.map(toApiImageValue);

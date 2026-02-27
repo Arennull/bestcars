@@ -7,6 +7,7 @@ import { type Request, type Response } from 'express';
 import type { Prisma } from '@prisma/client';
 import { prisma } from '../config/database.js';
 import { mockVehicles, type MockVehicle } from '../data/mockVehicles.js';
+import { normalizePrice } from '../utils/priceUtils.js';
 
 const useDatabase = Boolean(process.env.DATABASE_URL);
 
@@ -255,11 +256,12 @@ export const createVehicle = async (
   const title = String(body.title ?? '').trim();
   const year = Number(body.year);
   const mileage = String(body.mileage ?? '').trim();
-  const price = String(body.price ?? '').trim();
-  if (!title || !mileage || !price) {
+  const rawPrice = String(body.price ?? '').trim();
+  if (!title || !mileage || !rawPrice) {
     res.status(400).json({ error: 'title, mileage and price are required' });
     return;
   }
+  const price = normalizePrice(rawPrice);
   if (Number.isNaN(year) || year < 1900 || year > 2100) {
     res.status(400).json({ error: 'year must be a valid number between 1900 and 2100' });
     return;
@@ -331,7 +333,7 @@ export const updateVehicle = async (req: Request, res: Response): Promise<void> 
     if (!Number.isNaN(y) && y >= 1900 && y <= 2100) data.year = y;
   }
   if (body.mileage !== undefined) data.mileage = String(body.mileage).trim();
-  if (body.price !== undefined) data.price = String(body.price).trim();
+  if (body.price !== undefined) data.price = normalizePrice(String(body.price).trim());
   if (body.priceSubtext !== undefined) data.priceSubtext = body.priceSubtext?.trim() || undefined;
   if (body.fuelType !== undefined) data.fuelType = body.fuelType?.trim() || undefined;
   if (body.seats !== undefined) data.seats = body.seats?.trim() || undefined;
