@@ -18,6 +18,7 @@ import {
   type SceneEditorStorage,
   createEmptyScene,
   generateHotspotId,
+  migrateSceneEditorStorage,
 } from "../types/scene-editor";
 import "./scene-editor-hotspot.css";
 
@@ -59,7 +60,8 @@ export function SceneEditorSection({
 
   const [storage, setStorage] = useLocalStorageState<SceneEditorStorage>(
     "bestcars_scene_editor_state",
-    initialStorage
+    initialStorage,
+    { migrate: (raw) => migrateSceneEditorStorage(raw, initialStorage) }
   );
 
   const { persistScene, deleteSceneApi, setActiveSceneApi, duplicateSceneApi } = useSceneEditorApi(
@@ -69,17 +71,18 @@ export function SceneEditorSection({
     setStorage
   );
 
-  const activeScene =
-    storage.scenes.find((s) => s.id === storage.activeSceneId) ?? storage.scenes[0];
+  const scenes = Array.isArray(storage.scenes) ? storage.scenes : [];
+  const activeScene = scenes.find((s) => s.id === storage.activeSceneId) ?? scenes[0];
+  const activeHotspots = Array.isArray(activeScene?.hotspots) ? activeScene.hotspots : [];
   const webActiveScene = storage.webActiveSceneId
-    ? storage.scenes.find((s) => s.id === storage.webActiveSceneId) ?? null
+    ? scenes.find((s) => s.id === storage.webActiveSceneId) ?? null
     : null;
 
   const scenesForList = useMemo(() => {
-    if (!webActiveScene) return storage.scenes;
-    const rest = storage.scenes.filter((s) => s.id !== storage.webActiveSceneId);
+    if (!webActiveScene) return scenes;
+    const rest = scenes.filter((s) => s.id !== storage.webActiveSceneId);
     return [webActiveScene, ...rest];
-  }, [storage.scenes, storage.webActiveSceneId, webActiveScene]);
+  }, [scenes, storage.webActiveSceneId, webActiveScene]);
 
   const [addHotspotMode, setAddHotspotMode] = useState(false);
   const [autoSave, setAutoSave] = useState(true);
@@ -148,7 +151,8 @@ export function SceneEditorSection({
   const updateSceneHotspots = useCallback(
     (updater: (prev: Hotspot[]) => Hotspot[]) => {
       if (!activeScene) return;
-      const next = updater(activeScene.hotspots);
+      const prevHotspots = Array.isArray(activeScene.hotspots) ? activeScene.hotspots : [];
+      const next = updater(prevHotspots);
       const updated: Scene = {
         ...activeScene,
         hotspots: next,
@@ -170,7 +174,7 @@ export function SceneEditorSection({
   };
 
   const createScene = async (name: string, backgroundUrl: string) => {
-    const sceneName = name.trim() || `Escena ${storage.scenes.length + 1}`;
+    const sceneName = name.trim() || `Escena ${scenes.length + 1}`;
     const sceneBg = backgroundUrl.trim();
     if (apiMode && isAuthenticated) {
       try {
@@ -209,7 +213,7 @@ export function SceneEditorSection({
         ...activeScene,
         id: `scene_${Date.now()}`,
         name: `Copia de ${activeScene.name}`,
-        hotspots: activeScene.hotspots.map((h) => ({ ...h, id: generateHotspotId() })),
+        hotspots: activeHotspots.map((h) => ({ ...h, id: generateHotspotId() })),
         createdAt: nowIso(),
         updatedAt: nowIso(),
       };
@@ -348,7 +352,7 @@ export function SceneEditorSection({
       if (e.key === "Escape") setAddHotspotMode(false);
       if (e.key === "Delete" || e.key === "Backspace") {
         if (storage.activeHotspotId && activeScene) {
-          const h = activeScene.hotspots.find((p) => p.id === storage.activeHotspotId);
+          const h = activeHotspots.find((p) => p.id === storage.activeHotspotId);
           if (h && document.activeElement?.tagName !== "INPUT" && document.activeElement?.tagName !== "TEXTAREA") {
             e.preventDefault();
             removeHotspot(h);
@@ -358,7 +362,7 @@ export function SceneEditorSection({
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [storage.activeHotspotId, activeScene]);
+  }, [storage.activeHotspotId, activeScene, activeHotspots]);
 
   const buildPreviewPayload = useCallback(() => {
     const sceneForPreview = activeScene
@@ -366,10 +370,10 @@ export function SceneEditorSection({
           id: activeScene.id,
           name: activeScene.name,
           backgroundUrl: displayBackgroundUrl,
-          hotspots: activeScene.hotspots,
+          hotspots: activeHotspots,
         }
       : null;
-    const vehicleIds = new Set(activeScene?.hotspots.map((h) => h.vehicleId) ?? []);
+    const vehicleIds = new Set(activeHotspots.map((h) => h.vehicleId));
     const vehiclesForPreview = vehicles.filter((v) => vehicleIds.has(v.id));
     return {
       type: "BESTCARS_SCENE_EDITOR_STATE",
@@ -391,7 +395,7 @@ export function SceneEditorSection({
 
   useEffect(() => {
     sendPreviewState();
-  }, [sendPreviewState, activeScene?.hotspots, activeScene?.backgroundUrl]);
+  }, [sendPreviewState, activeHotspots, activeScene?.backgroundUrl]);
 
   useEffect(() => {
     const onMessage = (event: MessageEvent) => {
@@ -474,7 +478,7 @@ export function SceneEditorSection({
           <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4 backdrop-blur-sm">
             <div className="flex items-center justify-between mb-3">
               <h4 className="text-white/80 text-sm">Escenas</h4>
-              <span className="text-xs text-white/40">{storage.scenes.length}</span>
+              <span className="text-xs text-white/40">{scenes.length}</span>
             </div>
             <div className="space-y-2 max-h-[360px] overflow-y-auto pr-1">
               {scenesForList.map((scene) => {
@@ -511,7 +515,7 @@ export function SceneEditorSection({
                         </span>
                       </div>
                       <div className="text-xs mt-1 text-white/35">
-                        {scene.hotspots.length} hotspot{scene.hotspots.length !== 1 ? "s" : ""}
+                        {Array.isArray(scene.hotspots) ? scene.hotspots.length : 0} hotspot{(Array.isArray(scene.hotspots) ? scene.hotspots.length : 0) !== 1 ? "s" : ""}
                       </div>
                     </div>
                   </button>
@@ -620,7 +624,7 @@ export function SceneEditorSection({
               {!displayBackgroundUrl && (
                 <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent" />
               )}
-              {activeScene?.hotspots.map((h) => {
+              {activeHotspots.map((h) => {
                 const vehicle = vehicleMap.get(h.vehicleId);
                 const isSelected = h.id === storage.activeHotspotId;
                 return (
@@ -654,7 +658,7 @@ export function SceneEditorSection({
           <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4 backdrop-blur-sm space-y-3">
             <h4 className="text-white/80 text-sm">Hotspots</h4>
             <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1">
-              {activeScene?.hotspots.map((h, idx) => {
+              {activeHotspots.map((h, idx) => {
                 const vehicle = vehicleMap.get(h.vehicleId);
                 const isSelected = h.id === storage.activeHotspotId;
                 return (
@@ -717,7 +721,7 @@ export function SceneEditorSection({
                 );
               })}
             </div>
-            {(!activeScene?.hotspots?.length) && (
+            {activeHotspots.length === 0 && (
               <p className="text-xs text-white/40">Añade hotspots desde el canvas (modo Añadir hotspot + clic).</p>
             )}
           </div>
