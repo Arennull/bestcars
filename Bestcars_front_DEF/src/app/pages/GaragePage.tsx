@@ -91,45 +91,42 @@ export default function GaragePage() {
   return (
     <div className="garage-page" ref={pageRef}>
       <div className="image-wrapper">
-        <>
-            {!garageImageLoaded && !garageImageError && (
-              <div className="image-loader-overlay">
-                <div className="image-loader-content">
-                  <Loader2 className="w-12 h-12 animate-spin text-blue-500 mb-4" />
-                  <p className="text-white/70 text-sm">Cargando imágenes...</p>
-                </div>
-              </div>
-            )}
-            <div
-              className={`garage-image ${garageImageLoaded ? "loaded" : ""}`}
-              style={{
-                backgroundImage: `url(${garageImage})`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-                minHeight: "100vh",
-                width: "100%",
-                position: "relative",
-              }}
-            >
-              {showScene && (
-                <SceneHotspots hotspots={safeHotspots} vehicles={safeVehicles} />
-              )}
+        {!garageImageLoaded && !garageImageError && (
+          <div className="image-loader-overlay">
+            <div className="image-loader-content">
+              <Loader2 className="w-12 h-12 animate-spin text-blue-500 mb-4" />
+              <p className="text-white/70 text-sm">Cargando imágenes...</p>
             </div>
-            <img
-              src={logoImage}
-              alt="BEST CARS IBERICA Logo"
-              className={`garage-logo ${logoImageLoaded ? "loaded" : ""}`}
-              loading="eager"
-              fetchpriority="high"
-              decoding="async"
-              onLoad={() => setLogoImageLoaded(true)}
-              onError={() => {
-                setLogoImageError(true);
-                setLogoImageLoaded(true);
-              }}
-            />
-          </>
+          </div>
         )}
+        <div
+          className={`garage-image ${garageImageLoaded ? "loaded" : ""}`}
+          style={{
+            backgroundImage: `url(${garageImage})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            minHeight: "100vh",
+            width: "100%",
+            position: "relative",
+          }}
+        >
+          {showScene && (
+            <SceneHotspots hotspots={safeHotspots} vehicles={safeVehicles} />
+          )}
+        </div>
+        <img
+          src={logoImage}
+          alt="BEST CARS IBERICA Logo"
+          className={`garage-logo ${logoImageLoaded ? "loaded" : ""}`}
+          loading="eager"
+          fetchpriority="high"
+          decoding="async"
+          onLoad={() => setLogoImageLoaded(true)}
+          onError={() => {
+            setLogoImageError(true);
+            setLogoImageLoaded(true);
+          }}
+        />
       </div>
       {/* Home Button - same style and position as Nuestro Stock button */}
       <Link
