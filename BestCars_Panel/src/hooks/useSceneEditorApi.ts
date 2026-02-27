@@ -99,51 +99,60 @@ export function useSceneEditorApi(
   }, [apiMode, isAuthenticated, setStorage]);
 
   const persistScene = useCallback(
-    async (scene: Scene) => {
-      if (!apiMode || !isAuthenticated) return;
+    async (scene: Scene): Promise<boolean> => {
+      if (!apiMode || !isAuthenticated) return false;
 
-      const isApiId = !scene.id.startsWith("scene_");
+      const payload = {
+        name: scene.name,
+        backgroundUrl: scene.backgroundUrl,
+        hotspots: scene.hotspots,
+      };
+
+      const successToast =
+        (scene.hotspots?.length ?? 0) === 0
+          ? "Escena guardada sin hotspots"
+          : "Escena guardada";
+
+      // 1) Intentar actualizar siempre
       try {
-        if (isApiId) {
-          const updated = await apiUpdateScene(scene.id, {
-            name: scene.name,
-            backgroundUrl: scene.backgroundUrl,
-            hotspots: scene.hotspots,
-          });
-          setStorage((prev) => ({
-            ...prev,
-            scenes: prev.scenes.map((s) =>
-              s.id === scene.id ? apiSceneToEditorScene(updated) : s
-            ),
-          }));
-          toast.success(
-            (scene.hotspots?.length ?? 0) === 0
-              ? "Escena guardada sin hotspots"
-              : "Escena guardada"
-          );
-        } else {
-          const created = await apiCreateScene({
-            name: scene.name,
-            backgroundUrl: scene.backgroundUrl,
-            hotspots: scene.hotspots,
-          });
-          setStorage((prev) => ({
-            ...prev,
-            scenes: prev.scenes.map((s) => (s.id === scene.id ? apiSceneToEditorScene(created) : s)),
-            activeSceneId: prev.activeSceneId === scene.id ? created.id : prev.activeSceneId,
-          }));
-          toast.success(
-            (scene.hotspots?.length ?? 0) === 0
-              ? "Escena guardada sin hotspots"
-              : "Escena guardada"
-          );
-        }
+        const updated = await apiUpdateScene(scene.id, payload);
+        const editorScene = apiSceneToEditorScene(updated);
+        setStorage((prev) => ({
+          ...prev,
+          scenes: prev.scenes.map((s) => (s.id === scene.id ? editorScene : s)),
+        }));
+        toast.success(successToast);
+        return true;
       } catch (err) {
+        const msg = err instanceof Error ? err.message || "" : String(err ?? "");
+        // Si es NOT_FOUND / no existe, probamos a crearla
+        if (msg.toLowerCase().includes("not found")) {
+          try {
+            const created = await apiCreateScene(payload);
+            const editorScene = apiSceneToEditorScene(created);
+            setStorage((prev) => ({
+              ...prev,
+              scenes: prev.scenes.map((s) =>
+                s.id === scene.id ? editorScene : s
+              ),
+              activeSceneId:
+                prev.activeSceneId === scene.id ? created.id : prev.activeSceneId,
+            }));
+            toast.success(successToast);
+            return true;
+          } catch (err2) {
+            toast.error(
+              err2 instanceof Error
+                ? err2.message || "No se pudo guardar la escena. Reintenta."
+                : "No se pudo guardar la escena. Reintenta."
+            );
+            return false;
+          }
+        }
         toast.error(
-          err instanceof Error
-            ? err.message
-            : "No se pudo guardar la escena. Reintenta."
+          msg || "No se pudo guardar la escena. Reintenta."
         );
+        return false;
       }
     },
     [apiMode, isAuthenticated, setStorage]
@@ -183,17 +192,15 @@ export function useSceneEditorApi(
   );
 
   const setActiveSceneApi = useCallback(
-    async (sceneId: string) => {
-      if (!apiMode || !isAuthenticated) return;
-      if (sceneId.startsWith("scene_")) {
-        toast.error("Guarda la escena primero para activarla");
-        return;
-      }
+    async (sceneId: string): Promise<boolean> => {
+      if (!apiMode || !isAuthenticated) return false;
       try {
         await apiSetActiveScene(sceneId);
         toast.success("Escena activada en la web");
+        return true;
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Error al activar");
+        return false;
       }
     },
     [apiMode, isAuthenticated]

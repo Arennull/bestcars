@@ -142,7 +142,9 @@ export function SceneEditorSection({
       if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
       autoSaveTimerRef.current = setTimeout(() => {
         autoSaveTimerRef.current = null;
-        persistScene(updatedScene).then(() => setIsDirty(false));
+        persistScene(updatedScene).then((ok) => {
+          setIsDirty(!ok);
+        });
       }, AUTO_SAVE_DEBOUNCE_MS);
     },
     [autoSave, apiMode, isAuthenticated, persistScene]
@@ -207,25 +209,34 @@ export function SceneEditorSection({
 
   const handleDuplicateScene = async () => {
     if (!activeScene) return;
-    if (isDirty && !window.confirm("Tienes cambios sin guardar. ¿Descartar antes de duplicar?")) return;
-    if (activeScene.id.startsWith("scene_")) {
-      const copy: Scene = {
-        ...activeScene,
-        id: `scene_${Date.now()}`,
-        name: `Copia de ${activeScene.name}`,
-        hotspots: activeHotspots.map((h) => ({ ...h, id: generateHotspotId() })),
-        createdAt: nowIso(),
-        updatedAt: nowIso(),
-      };
-      setStorage((prev) => ({
-        ...prev,
-        scenes: [...prev.scenes, copy],
-        activeSceneId: copy.id,
-        activeHotspotId: null,
-      }));
+    if (apiMode && isAuthenticated) {
+      if (isDirty) {
+        const ok = await persistScene(activeScene);
+        if (!ok) {
+          toast.error("No se pudo guardar la escena antes de duplicar.");
+          return;
+        }
+        setIsDirty(false);
+      }
+      await duplicateSceneApi(activeScene.id);
       return;
     }
-    await duplicateSceneApi(activeScene.id);
+    // Modo local sin API: duplicación en memoria
+    if (isDirty && !window.confirm("Tienes cambios sin guardar. ¿Descartar antes de duplicar?")) return;
+    const copy: Scene = {
+      ...activeScene,
+      id: `scene_${Date.now()}`,
+      name: `Copia de ${activeScene.name}`,
+      hotspots: activeHotspots.map((h) => ({ ...h, id: generateHotspotId() })),
+      createdAt: nowIso(),
+      updatedAt: nowIso(),
+    };
+    setStorage((prev) => ({
+      ...prev,
+      scenes: [...prev.scenes, copy],
+      activeSceneId: copy.id,
+      activeHotspotId: null,
+    }));
   };
 
   const deleteActiveScene = () => {
@@ -235,7 +246,7 @@ export function SceneEditorSection({
       return;
     }
     if (!window.confirm(`¿Eliminar la escena "${activeScene.name}"?`)) return;
-    if (apiMode && isAuthenticated && !activeScene.id.startsWith("scene_")) {
+    if (apiMode && isAuthenticated) {
       deleteSceneApi(activeScene.id);
       return;
     }
@@ -344,7 +355,9 @@ export function SceneEditorSection({
 
   const handleSaveScene = () => {
     if (!activeScene) return;
-    persistScene(activeScene).then(() => setIsDirty(false));
+    persistScene(activeScene).then((ok) => {
+      setIsDirty(!ok);
+    });
   };
 
   useEffect(() => {
@@ -440,11 +453,14 @@ export function SceneEditorSection({
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          {apiMode && isAuthenticated && activeScene && !activeScene.id.startsWith("scene_") && (
+          {apiMode && isAuthenticated && activeScene && (
             <button
               onClick={() => {
-                setStorage((prev) => ({ ...prev, webActiveSceneId: activeScene.id }));
-                setActiveSceneApi(activeScene.id);
+                setActiveSceneApi(activeScene.id).then((ok) => {
+                  if (ok) {
+                    setStorage((prev) => ({ ...prev, webActiveSceneId: activeScene.id }));
+                  }
+                });
               }}
               className="px-4 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all text-emerald-200 text-sm flex items-center gap-2"
               title="Mostrar esta escena en la web"

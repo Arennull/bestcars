@@ -75,13 +75,21 @@ async function fetchApi<T>(
   }
   if (!res.ok) {
     const text = await res.text();
-    let err: { error?: string } = { error: 'Error desconocido' };
+    let parsed: any = null;
     try {
-      err = JSON.parse(text);
+      parsed = JSON.parse(text);
     } catch {
-      err = { error: text || `Error ${res.status}` };
+      // ignoramos, usamos texto plano
     }
-    throw new Error(err.error || `Error ${res.status}`);
+    const msg =
+      typeof parsed?.error === 'string'
+        ? parsed.error
+        : typeof parsed?.error?.message === 'string'
+          ? parsed.error.message
+          : typeof parsed?.message === 'string'
+            ? parsed.message
+            : text || `Error ${res.status}`;
+    throw new Error(msg);
   }
   if (res.status === 204) return undefined as T;
   return JSON.parse(await res.text()) as T;

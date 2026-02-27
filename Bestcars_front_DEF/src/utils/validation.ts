@@ -30,7 +30,7 @@ export function getPhoneErrorMessage(phone: string): string | null {
   }
 
   if (!validatePhone(phone)) {
-    return 'Formato de teléfono inválido. Use formato internacional (ej: +34 600 000 000)';
+    return 'Formato de teléfono inválido. Use formato internacional (ej: +34 659 16 41 04)';
   }
 
   return null;

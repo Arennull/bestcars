@@ -80,7 +80,9 @@ export default function GaragePage() {
   const hotspots = sceneHotspots(activeScene);
   const safeHotspots = Array.isArray(hotspots) ? hotspots : [];
 
-  const showScene = activeScene?.backgroundUrl && safeVehicles.length > 0;
+  // El fondo del garaje es siempre la imagen fija de ilustración;
+  // las escenas solo afectan a los hotspots.
+  const showScene = safeVehicles.length > 0;
 
   useEffect(() => {
     if (showScene) setGarageImageLoaded(true);
@@ -89,30 +91,7 @@ export default function GaragePage() {
   return (
     <div className="garage-page" ref={pageRef}>
       <div className="image-wrapper">
-        {showScene ? (
-          <>
-            <div
-              className="garage-image loaded"
-              style={{
-                backgroundImage: `url(${activeScene!.backgroundUrl})`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-                minHeight: "100vh",
-                width: "100%",
-                position: "relative",
-              }}
-            >
-              <SceneHotspots hotspots={safeHotspots} vehicles={safeVehicles} />
-            </div>
-            <img
-              src={activeScene!.backgroundUrl}
-              alt=""
-              className="hidden"
-              onLoad={() => setGarageImageLoaded(true)}
-            />
-          </>
-        ) : (
-          <>
+        <>
             {!garageImageLoaded && !garageImageError && (
               <div className="image-loader-overlay">
                 <div className="image-loader-content">
@@ -121,19 +100,21 @@ export default function GaragePage() {
                 </div>
               </div>
             )}
-            <img
-              src={garageImage}
-              alt="Garage with luxury cars"
+            <div
               className={`garage-image ${garageImageLoaded ? "loaded" : ""}`}
-              loading="eager"
-              fetchpriority="high"
-              decoding="async"
-              onLoad={() => setGarageImageLoaded(true)}
-              onError={() => {
-                setGarageImageError(true);
-                setGarageImageLoaded(true);
+              style={{
+                backgroundImage: `url(${garageImage})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                minHeight: "100vh",
+                width: "100%",
+                position: "relative",
               }}
-            />
+            >
+              {showScene && (
+                <SceneHotspots hotspots={safeHotspots} vehicles={safeVehicles} />
+              )}
+            </div>
             <img
               src={logoImage}
               alt="BEST CARS IBERICA Logo"

@@ -2,6 +2,8 @@ import React, { useEffect, useState, useCallback } from "react";
 import { api, type Scene, sceneHotspots } from "../../services/api.js";
 import type { Vehicle } from "../../types/vehicle.js";
 import SceneHotspots from "../components/SceneHotspots";
+// @ts-expect-error - Importación de imagen con espacios en el nombre (mismo fondo que Garage)
+import garageImage from "../../assets/Ilustración_sin_título 103.jpg";
 
 interface SceneState {
   scene: Scene | null;
@@ -90,7 +92,7 @@ export default function ScenePreviewPage() {
   const hotspots = sceneHotspots(scene);
   const safeHotspots = Array.isArray(hotspots) ? hotspots : [];
 
-  if (!scene || !scene.backgroundUrl) {
+  if (!scene) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center text-white/50">
         <p>No hay escena activa. Configura una en el panel.</p>
@@ -102,7 +104,7 @@ export default function ScenePreviewPage() {
     <div
       className="relative w-full min-h-screen bg-black"
       style={{
-        backgroundImage: `url(${scene.backgroundUrl})`,
+        backgroundImage: `url(${garageImage})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
       }}

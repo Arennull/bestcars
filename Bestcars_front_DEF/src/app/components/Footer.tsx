@@ -8,29 +8,13 @@ export function Footer() {
   return (
     <footer className="bg-[#070A10] border-t border-white/10 mt-auto">
       <div className="max-w-[1280px] mx-auto px-6 py-12 md:py-16">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
           {/* Brand */}
           <div>
             <h3 className="text-lg font-bold text-white mb-4">Best Cars Ibérica</h3>
             <p className="text-sm text-white/60 leading-relaxed">
               Concesionario de vehículos de lujo en Ibiza. Experiencia premium en compra y venta de coches exclusivos.
             </p>
-          </div>
-
-          {/* Enlaces */}
-          <div>
-            <h3 className="text-sm font-semibold text-white/90 uppercase tracking-wider mb-4">Navegación</h3>
-            <nav className="flex flex-col gap-3" aria-label="Enlaces del sitio">
-              <Link to="/" className="text-sm text-white/60 hover:text-white transition-colors">
-                Inicio
-              </Link>
-              <Link to="/garage" className="text-sm text-white/60 hover:text-white transition-colors">
-                Nuestro Stock
-              </Link>
-              <Link to="/#contacto" className="text-sm text-white/60 hover:text-white transition-colors">
-                Contacto
-              </Link>
-            </nav>
           </div>
 
           {/* Contacto */}
@@ -45,8 +29,8 @@ export function Footer() {
               </li>
               <li className="flex items-center gap-2">
                 <Phone className="w-4 h-4 text-white/40 flex-shrink-0" aria-hidden />
-                <a href="tel:+34600000000" className="hover:text-white transition-colors">
-                  +34 600 000 000
+                <a href="tel:+34659164104" className="hover:text-white transition-colors">
+                  +34 659 16 41 04
                 </a>
               </li>
               <li className="flex items-center gap-2">
