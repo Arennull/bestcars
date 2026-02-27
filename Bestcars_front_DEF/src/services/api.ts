@@ -183,7 +183,7 @@ export function sceneHotspots(scene: Scene | null | undefined): Hotspot[] {
     if (!slot?.vehicleId) continue;
     const t = slot.transform ?? { x: 0, y: 0 };
     out.push({
-      id: slotId,
+      id: `legacy-${slotId}-${slot.vehicleId}`,
       vehicleId: slot.vehicleId,
       x: Number(t.x) || 0,
       y: Number(t.y) || 0,

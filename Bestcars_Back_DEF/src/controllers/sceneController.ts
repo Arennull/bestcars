@@ -1,10 +1,11 @@
 /**
  * Controlador de escenas (editor del panel).
- * Modelo: hotspots ilimitados. positions en DB es JSON: array de Hotspot (o legacy object se normaliza).
+ * Modelo: hotspots ilimitados. En DB se guarda en positions (Json), pero la API siempre expone hotspots[] normalizado.
  */
 
 import { type Request, type Response } from 'express';
 import { prisma } from '../config/database.js';
+import { normalizeScene } from '../utils/sceneNormalize.js';
 
 const useDatabase = Boolean(process.env.DATABASE_URL);
 
@@ -17,51 +18,37 @@ export interface Hotspot {
   createdAt?: string;
 }
 
-/** Convierte positions (legacy object o array) a array de hotspots para la API */
+/** Convierte positions/hotspots a array de hotspots para la API/persistencia */
 function normalizePositionsToHotspots(raw: unknown): Hotspot[] {
-  if (Array.isArray(raw)) {
-    return (raw as Hotspot[]).filter(
-      (h) => h && typeof h.id === 'string' && typeof h.vehicleId === 'string' && typeof h.x === 'number' && typeof h.y === 'number'
-    );
-  }
-  if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
-    const obj = raw as Record<string, { vehicleId?: string | null; transform?: { x?: number; y?: number }; updatedAt?: string }>;
-    const out: Hotspot[] = [];
-    for (const [slotId, slot] of Object.entries(obj)) {
-      if (!slot || !slot.vehicleId) continue;
-      const t = slot.transform ?? { x: 0, y: 0 };
-      out.push({
-        id: slotId,
-        vehicleId: slot.vehicleId,
-        x: Number(t.x) || 0,
-        y: Number(t.y) || 0,
-        createdAt: slot.updatedAt,
-      });
-    }
-    return out;
-  }
-  return [];
+  const normalized = normalizeScene({
+    hotspots: Array.isArray(raw) ? raw : undefined,
+    positions: !Array.isArray(raw) ? raw : undefined,
+  });
+  return normalized.hotspots as Hotspot[];
 }
 
 /** Acepta body con hotspots[] (nuevo) o positions (legacy); devuelve array para guardar en positions */
 function normalizePayloadToHotspots(body: Record<string, unknown>): Hotspot[] {
-  if (Array.isArray(body.hotspots)) {
-    return (body.hotspots as Hotspot[]).filter(
-      (h) => h && typeof h.id === 'string' && typeof h.vehicleId === 'string' && typeof h.x === 'number' && typeof h.y === 'number'
-    );
-  }
-  if (body.positions && typeof body.positions === 'object')
-    return normalizePositionsToHotspots(body.positions);
-  return [];
+  const normalized = normalizeScene({
+    hotspots: (body as any).hotspots,
+    positions: (body as any).positions,
+  });
+  return normalized.hotspots as Hotspot[];
 }
 
 function sceneToJson(s: { id: string; name: string; backgroundUrl: string; positions: unknown; isActive: boolean; order: number; createdAt: Date; updatedAt: Date }) {
-  const hotspots = normalizePositionsToHotspots(s.positions);
-  return {
+  const normalized = normalizeScene({
     id: s.id,
     name: s.name,
     backgroundUrl: s.backgroundUrl,
-    hotspots,
+    hotspots: s.positions,
+    positions: s.positions,
+  });
+  return {
+    id: normalized.id || s.id,
+    name: normalized.name || s.name,
+    backgroundUrl: normalized.backgroundUrl || s.backgroundUrl,
+    hotspots: normalized.hotspots,
     isActive: s.isActive,
     order: s.order,
     createdAt: s.createdAt.toISOString(),
@@ -145,7 +132,7 @@ export const getSceneById = async (req: Request, res: Response): Promise<void> =
         res.status(404).json({
           error: {
             message: 'Scene not found',
-            code: 'NOT_FOUND',
+            code: 'SCENE_NOT_FOUND',
           },
         });
         return;
@@ -158,7 +145,7 @@ export const getSceneById = async (req: Request, res: Response): Promise<void> =
       res.status(404).json({
         error: {
           message: 'Scene not found',
-          code: 'NOT_FOUND',
+          code: 'SCENE_NOT_FOUND',
         },
       });
       return;
@@ -176,11 +163,18 @@ export const getSceneById = async (req: Request, res: Response): Promise<void> =
 };
 
 function inMemorySceneToJson(s: InMemoryScene) {
-  return {
+  const normalized = normalizeScene({
     id: s.id,
     name: s.name,
     backgroundUrl: s.backgroundUrl,
     hotspots: s.positions,
+    positions: s.positions,
+  });
+  return {
+    id: normalized.id || s.id,
+    name: normalized.name || s.name,
+    backgroundUrl: normalized.backgroundUrl || s.backgroundUrl,
+    hotspots: normalized.hotspots,
     isActive: s.isActive,
     order: s.order,
     createdAt: s.createdAt,

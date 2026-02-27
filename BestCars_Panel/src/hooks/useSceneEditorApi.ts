@@ -105,12 +105,22 @@ export function useSceneEditorApi(
       const isApiId = !scene.id.startsWith("scene_");
       try {
         if (isApiId) {
-          await apiUpdateScene(scene.id, {
+          const updated = await apiUpdateScene(scene.id, {
             name: scene.name,
             backgroundUrl: scene.backgroundUrl,
             hotspots: scene.hotspots,
           });
-          toast.success("Escena guardada");
+          setStorage((prev) => ({
+            ...prev,
+            scenes: prev.scenes.map((s) =>
+              s.id === scene.id ? apiSceneToEditorScene(updated) : s
+            ),
+          }));
+          toast.success(
+            (scene.hotspots?.length ?? 0) === 0
+              ? "Escena guardada sin hotspots"
+              : "Escena guardada"
+          );
         } else {
           const created = await apiCreateScene({
             name: scene.name,
@@ -122,10 +132,18 @@ export function useSceneEditorApi(
             scenes: prev.scenes.map((s) => (s.id === scene.id ? apiSceneToEditorScene(created) : s)),
             activeSceneId: prev.activeSceneId === scene.id ? created.id : prev.activeSceneId,
           }));
-          toast.success("Escena creada");
+          toast.success(
+            (scene.hotspots?.length ?? 0) === 0
+              ? "Escena guardada sin hotspots"
+              : "Escena guardada"
+          );
         }
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : "No se pudo guardar. Reintenta.");
+        toast.error(
+          err instanceof Error
+            ? err.message
+            : "No se pudo guardar la escena. Reintenta."
+        );
       }
     },
     [apiMode, isAuthenticated, setStorage]
