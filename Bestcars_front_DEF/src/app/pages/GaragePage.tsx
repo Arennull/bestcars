@@ -215,7 +215,7 @@ export default function GaragePage() {
         <button
           type="button"
           onClick={() => setIsStockMenuOpen(true)}
-          className="fixed top-6 left-6 px-6 py-3 border border-white text-white bg-transparent rounded-sm transition-all duration-200 hover:bg-white/10 z-50"
+          className="fixed top-6 right-6 px-6 py-3 border border-white text-white bg-transparent rounded-sm transition-all duration-200 hover:bg-white/10 z-50"
           style={{
             fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif',
             fontSize: '15px',
