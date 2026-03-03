@@ -117,13 +117,6 @@ export function ProductHeader({ title, year, mileage, price, priceSubtext, tags,
               </button>
             )}
             <a
-              href="tel:+34659164104"
-              className="h-9 sm:h-10 md:h-11 px-2.5 sm:px-3 md:px-6 rounded-lg sm:rounded-xl bg-blue-600 hover:bg-blue-500 text-white inline-flex items-center gap-1.5 sm:gap-2 cursor-pointer shadow-lg shadow-blue-600/20 transition-all duration-200 select-none text-xs sm:text-sm md:text-base flex-shrink-0 whitespace-nowrap"
-              style={{ fontWeight: 600 }}
-            >
-              Contactar
-            </a>
-            <a
               href="https://www.instagram.com/bestcarsiberica/"
               target="_blank"
               rel="noopener noreferrer"
