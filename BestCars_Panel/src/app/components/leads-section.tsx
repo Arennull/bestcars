@@ -1,6 +1,6 @@
 /**
  * Sección de gestión de leads (contactos interesados en vehículos).
- * Filtros por estado y origen, listado con tarjetas detalladas.
+ * Filtros por estado y vehículo, listado con tarjetas detalladas.
  */
 import { useMemo, useState } from "react";
 import { motion } from "motion/react";
@@ -17,7 +17,7 @@ interface LeadsSectionProps {
 
 export function LeadsSection({ leads, vehicles, onLeadUpdate, onLeadDelete }: LeadsSectionProps) {
   const [filterStatus, setFilterStatus] = useState<string>("all");
-  const [filterOrigin, setFilterOrigin] = useState<string>("all");
+  const [filterVehicle, setFilterVehicle] = useState<string>("all");
 
   // Opciones de filtro por estado del lead
   const statusOptions = [
@@ -29,15 +29,14 @@ export function LeadsSection({ leads, vehicles, onLeadUpdate, onLeadDelete }: Le
     { value: 'perdido', label: 'Perdidos' },
   ];
 
-  // Opciones de filtro por origen del lead
-  const originOptions = [
-    { value: "all", label: "Todos" },
-    { value: 'web', label: 'Web' },
-    { value: 'instagram', label: 'Instagram' },
-    { value: 'portal', label: 'Portal' },
-    { value: 'anuncio', label: 'Anuncio' },
-    { value: 'referido', label: 'Referido' },
-  ];
+  // Opciones de filtro por vehículo (stock actual)
+  const vehicleOptions = useMemo(() => [
+    { value: 'all', label: 'Todos' },
+    ...vehicles.map((v) => ({
+      value: v.id,
+      label: `${v.brand} ${v.model}`,
+    })),
+  ], [vehicles]);
 
   const statusColors = {
     nuevo: 'from-blue-500/20 to-blue-600/20 border-blue-500/30 text-blue-300',
@@ -55,14 +54,14 @@ export function LeadsSection({ leads, vehicles, onLeadUpdate, onLeadDelete }: Le
     referido: '🤝',
   };
 
-  // Leads filtrados por estado y origen (memoizado para evitar recálculos)
+  // Leads filtrados por estado y vehículo (memoizado para evitar recálculos)
   const filteredLeads = useMemo(() => {
     return leads.filter((lead) => {
       if (filterStatus !== "all" && lead.status !== filterStatus) return false;
-      if (filterOrigin !== "all" && lead.origin !== filterOrigin) return false;
+      if (filterVehicle !== "all" && lead.vehicleId !== filterVehicle) return false;
       return true;
     });
-  }, [leads, filterStatus, filterOrigin]);
+  }, [leads, filterStatus, filterVehicle]);
 
   const getVehicleForLead = (vehicleId: string) =>
     vehicles.find((v) => v.id === vehicleId);
@@ -149,11 +148,11 @@ export function LeadsSection({ leads, vehicles, onLeadUpdate, onLeadDelete }: Le
         </div>
         <div className="flex-1 relative">
           <select
-            value={filterOrigin}
-            onChange={(e) => setFilterOrigin(e.target.value)}
+            value={filterVehicle}
+            onChange={(e) => setFilterVehicle(e.target.value)}
             className="w-full px-4 py-3 bg-white/[0.03] border border-white/10 rounded-xl text-white/90 focus:outline-none focus:border-blue-500/50 focus:bg-white/[0.05] appearance-none pr-10"
           >
-            {originOptions.map((option) => (
+            {vehicleOptions.map((option) => (
               <option key={option.value} value={option.value} className="bg-black text-white">
                 {option.label}
               </option>
@@ -304,7 +303,9 @@ export function LeadsSection({ leads, vehicles, onLeadUpdate, onLeadDelete }: Le
           <p className="text-sm text-white/40 text-center max-w-sm">
             {leads.length === 0
               ? "Aún no hay leads. Los contactos del formulario web aparecerán aquí."
-              : "No hay leads que coincidan con los filtros seleccionados. Prueba con otros criterios."}
+              : filterVehicle !== "all"
+                ? "No hay leads para este vehículo."
+                : "No hay leads que coincidan con los filtros seleccionados. Prueba con otros criterios."}
           </p>
         </motion.div>
       )}
