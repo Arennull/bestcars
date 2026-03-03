@@ -2,11 +2,19 @@
  * Sección de estadísticas y rendimiento.
  * Gráficos de vistas, clics, leads, conversión y top performers.
  */
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { motion } from "motion/react";
-import { TrendingUp, Eye, MousePointer, Users, Video, ChartBar } from 'lucide-react';
+import { TrendingUp, Eye, MousePointer, Users, ChartBar, Filter, Calendar } from 'lucide-react';
+import { subDays, parseISO, isAfter } from 'date-fns';
 import { Vehicle } from '../data/mock-data';
 import { ImageWithFallback } from './figma/ImageWithFallback';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from './ui/select';
 import {
   BarChart,
   Bar,
@@ -49,14 +57,6 @@ export function StatsSection({ vehicles }: StatsSectionProps) {
     { name: "Vendido", value: vehicles.filter((v) => v.status === "vendido").length, color: "#6b7280" },
   ], [vehicles]);
 
-  const videoPerformance = useMemo(() => vehicles
-    .filter((v) => v.videoUrl)
-    .map((v) => ({
-      name: v.brand,
-      views: v.videoViews || 0,
-      leads: v.leads,
-    })), [vehicles]);
-
   const totalStats = useMemo(() => ({
     totalViews: vehicles.reduce((acc, v) => acc + v.views, 0),
     totalClicks: vehicles.reduce((acc, v) => acc + v.clicks, 0),
@@ -76,6 +76,50 @@ export function StatsSection({ vehicles }: StatsSectionProps) {
       return b.leads - a.leads;
     })
     .slice(0, 3), [vehicles]);
+
+  // Filtros para el gráfico de rendimiento de coches
+  const [dateRange, setDateRange] = useState<'all' | '7d' | '30d' | '90d'>('all');
+  const [brandFilter, setBrandFilter] = useState<string>('all');
+  const [modelFilter, setModelFilter] = useState<string>('all');
+
+  const filteredForPerformance = useMemo(() => {
+    let list = vehicles;
+    if (dateRange !== 'all') {
+      const cutoff = subDays(new Date(), dateRange === '7d' ? 7 : dateRange === '30d' ? 30 : 90);
+      list = list.filter((v) => {
+        try {
+          const d = parseISO(v.createdAt);
+          return isAfter(d, cutoff);
+        } catch {
+          return true;
+        }
+      });
+    }
+    if (brandFilter !== 'all') {
+      list = list.filter((v) => v.brand === brandFilter);
+    }
+    if (modelFilter !== 'all') {
+      list = list.filter((v) => v.model === modelFilter);
+    }
+    return list;
+  }, [vehicles, dateRange, brandFilter, modelFilter]);
+
+  const performanceChartData = useMemo(() => filteredForPerformance
+    .sort((a, b) => b.views - a.views)
+    .slice(0, 10)
+    .map((v) => ({
+      name: `${v.brand} ${v.model.split(' ')[0]}`.trim(),
+      vistas: v.views,
+      leads: v.leads,
+      reservas: v.status === 'reservado' ? 1 : 0,
+      ventas: v.status === 'vendido' ? 1 : 0,
+    })), [filteredForPerformance]);
+
+  const uniqueBrands = useMemo(() => [...new Set(vehicles.map((v) => v.brand))].sort(), [vehicles]);
+  const uniqueModels = useMemo(() => {
+    const filtered = brandFilter === 'all' ? vehicles : vehicles.filter((v) => v.brand === brandFilter);
+    return [...new Set(filtered.map((v) => v.model))].sort();
+  }, [vehicles, brandFilter]);
 
   if (vehicles.length === 0) {
     return (
@@ -251,37 +295,92 @@ export function StatsSection({ vehicles }: StatsSectionProps) {
         </motion.div>
       </div>
 
-      {/* Video Performance */}
+      {/* Rendimiento de Coches — gráfico interactivo */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.6 }}
         className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.05] to-white/[0.02] backdrop-blur-xl p-6 mb-8"
       >
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 rounded-xl bg-blue-500/20">
-            <Video className="w-5 h-5 text-blue-400" />
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-blue-500/20">
+              <ChartBar className="w-5 h-5 text-blue-400" />
+            </div>
+            <h3 className="text-lg text-white">Rendimiento de Coches</h3>
           </div>
-          <h3 className="text-lg text-white">Rendimiento de Coches</h3>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-white/40" />
+              <Select value={dateRange} onValueChange={(v) => setDateRange(v as typeof dateRange)}>
+                <SelectTrigger className="w-[140px] bg-white/5 border-white/10 text-white">
+                  <SelectValue placeholder="Rango fechas" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="7d">Últimos 7 días</SelectItem>
+                  <SelectItem value="30d">Últimos 30 días</SelectItem>
+                  <SelectItem value="90d">Últimos 90 días</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-white/40" />
+              <Select value={brandFilter} onValueChange={(v) => { setBrandFilter(v); setModelFilter('all'); }}>
+                <SelectTrigger className="w-[140px] bg-white/5 border-white/10 text-white">
+                  <SelectValue placeholder="Marca" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas las marcas</SelectItem>
+                  {uniqueBrands.map((b) => (
+                    <SelectItem key={b} value={b}>{b}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={modelFilter} onValueChange={setModelFilter}>
+                <SelectTrigger className="w-[140px] bg-white/5 border-white/10 text-white">
+                  <SelectValue placeholder="Modelo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los modelos</SelectItem>
+                  {uniqueModels.map((m) => (
+                    <SelectItem key={m} value={m}>{m}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </div>
-        <ResponsiveContainer width="100%" height={250}>
-          <LineChart data={videoPerformance}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-            <XAxis dataKey="name" stroke="rgba(255,255,255,0.4)" style={{ fontSize: 12 }} />
-            <YAxis stroke="rgba(255,255,255,0.4)" style={{ fontSize: 12 }} />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: 'rgba(0,0,0,0.9)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: '12px',
-                color: 'white',
-              }}
-            />
-            <Legend wrapperStyle={{ color: 'rgba(255,255,255,0.7)' }} />
-            <Line type="monotone" dataKey="views" stroke="#60a5fa" strokeWidth={2} dot={{ fill: '#60a5fa', r: 4 }} />
-            <Line type="monotone" dataKey="leads" stroke="#34d399" strokeWidth={2} dot={{ fill: '#34d399', r: 4 }} />
-          </LineChart>
-        </ResponsiveContainer>
+        {performanceChartData.length === 0 ? (
+          <div className="h-[300px] flex items-center justify-center text-white/50">
+            No hay vehículos que coincidan con los filtros seleccionados.
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height={320}>
+            <BarChart data={performanceChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+              <XAxis dataKey="name" stroke="rgba(255,255,255,0.4)" style={{ fontSize: 11 }} tick={{ fill: 'rgba(255,255,255,0.7)' }} />
+              <YAxis stroke="rgba(255,255,255,0.4)" style={{ fontSize: 11 }} tick={{ fill: 'rgba(255,255,255,0.7)' }} />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: 'rgba(0,0,0,0.9)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: '12px',
+                  color: 'white',
+                }}
+                formatter={(value: number, name: string) => [
+                  name === 'reservas' || name === 'ventas' ? (value ? 'Sí' : 'No') : value.toLocaleString(),
+                  { vistas: 'Vistas', leads: 'Leads', reservas: 'Reservado', ventas: 'Vendido' }[name] ?? name,
+                ]}
+              />
+              <Legend wrapperStyle={{ color: 'rgba(255,255,255,0.7)' }} />
+              <Bar dataKey="vistas" name="Vistas" fill="#60a5fa" radius={[6, 6, 0, 0]} />
+              <Bar dataKey="leads" name="Leads" fill="#34d399" radius={[6, 6, 0, 0]} />
+              <Bar dataKey="reservas" name="Reservado" fill="#f59e0b" radius={[6, 6, 0, 0]} />
+              <Bar dataKey="ventas" name="Vendido" fill="#ef4444" radius={[6, 6, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        )}
       </motion.div>
 
       {/* Top Performers */}
