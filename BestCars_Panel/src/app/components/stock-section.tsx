@@ -2,7 +2,7 @@
  * Sección de gestión de stock de vehículos.
  * Permite listar, reordenar (drag & drop), editar precios y crear nuevos vehículos.
  */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
@@ -252,12 +252,25 @@ function VehicleCard({ vehicle, index, onVehicleClick, onPriceUpdate, moveCard }
   );
 }
 
-export function StockSection({ vehicles, onVehicleClick, onReorder, onPriceUpdate, onCreateVehicle }: StockSectionProps) {
-  const [localVehicles, setLocalVehicles] = useState(vehicles);
+const PANEL_STATUS_ORDER: Record<Vehicle['status'], number> = {
+  disponible: 0,
+  reservado: 1,
+  vendido: 2,
+};
 
-  // Sincroniza el estado local cuando cambian las props (ej. tras filtrado o reorden en padre)
+function sortByStatus(list: Vehicle[]): Vehicle[] {
+  return [...list].sort((a, b) => {
+    const diff = (PANEL_STATUS_ORDER[a.status] ?? 3) - (PANEL_STATUS_ORDER[b.status] ?? 3);
+    return diff;
+  });
+}
+
+export function StockSection({ vehicles, onVehicleClick, onReorder, onPriceUpdate, onCreateVehicle }: StockSectionProps) {
+  const sortedVehicles = useMemo(() => sortByStatus(vehicles), [vehicles]);
+  const [localVehicles, setLocalVehicles] = useState(sortedVehicles);
+
   useEffect(() => {
-    setLocalVehicles(vehicles);
+    setLocalVehicles(sortByStatus(vehicles));
   }, [vehicles]);
 
   /** Reordena las tarjetas al soltar un elemento en una nueva posición */
@@ -273,7 +286,7 @@ export function StockSection({ vehicles, onVehicleClick, onReorder, onPriceUpdat
     <DndProvider backend={HTML5Backend}>
       <div className="p-4 md:p-8">
         {/* Stats Overview */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -306,6 +319,16 @@ export function StockSection({ vehicles, onVehicleClick, onReorder, onPriceUpdat
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
+            className="relative rounded-2xl border backdrop-blur-xl p-6"
+            style={{ borderColor: "#EF444433", background: "linear-gradient(135deg, #EF44440D, #EF444405)" }}
+          >
+            <p className="text-sm mb-2" style={{ color: "#EF4444" }}>✕ Vendidos</p>
+            <p className="text-3xl text-white">{vehicles.filter(v => v.status === 'vendido').length}</p>
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
             className="relative rounded-2xl border border-white/10 bg-gradient-to-br from-blue-500/[0.05] to-purple-500/[0.02] backdrop-blur-xl p-6"
           >
             <p className="text-sm text-white/50 mb-2">Valor Total</p>

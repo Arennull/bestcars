@@ -11,6 +11,8 @@ import { normalizePrice } from '../utils/priceUtils.js';
 
 const useDatabase = Boolean(process.env.DATABASE_URL);
 
+const STATUS_PRIORITY: Record<string, number> = { available: 0, reserved: 1, sold: 2 };
+
 /** Copia mutable para modo MOCK: create/update/delete sin DATABASE_URL */
 function getInMemoryVehicles(): MockVehicle[] {
   const key = '__inMemoryVehicles';
@@ -124,6 +126,13 @@ export const getAllVehicles = async (_req: Request, res: Response): Promise<void
         clicks: (v as { clicks?: number }).clicks ?? 0,
         status: (v as { status?: string }).status ?? 'available',
       });
+      vehicles.sort((a, b) => {
+        const sa = (a as { status?: string }).status ?? 'available';
+        const sb = (b as { status?: string }).status ?? 'available';
+        const diff = (STATUS_PRIORITY[sa] ?? 3) - (STATUS_PRIORITY[sb] ?? 3);
+        if (diff !== 0) return diff;
+        return b.createdAt.getTime() - a.createdAt.getTime();
+      });
       res.json(
         vehicles.map((v, i) =>
           formatVehicle(v, {
@@ -137,8 +146,16 @@ export const getAllVehicles = async (_req: Request, res: Response): Promise<void
       );
       return;
     }
+    const mockList = getInMemoryVehicles();
+    mockList.sort((a, b) => {
+      const sa = a.status ?? 'available';
+      const sb = b.status ?? 'available';
+      const diff = (STATUS_PRIORITY[sa] ?? 3) - (STATUS_PRIORITY[sb] ?? 3);
+      if (diff !== 0) return diff;
+      return b.createdAt.getTime() - a.createdAt.getTime();
+    });
     res.json(
-      getInMemoryVehicles().map((v) => ({
+      mockList.map((v) => ({
         ...v,
         status: v.status ?? 'available',
         createdAt: v.createdAt.toISOString(),
