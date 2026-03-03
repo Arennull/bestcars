@@ -165,11 +165,11 @@ export default function DynamicScenePage() {
         <SceneHotspots hotspots={safeHotspots} vehicles={safeVehicles} />
       </div>
       <Link
-        to="/garage"
+        to="/"
         className="dynamic-scene-page__home-link"
-        aria-label="Volver al garaje"
+        aria-label="Volver a inicio"
       >
-        Volver al garaje
+        Volver a inicio
       </Link>
       {scenes.length >= 2 && (
         <NextSceneButton
