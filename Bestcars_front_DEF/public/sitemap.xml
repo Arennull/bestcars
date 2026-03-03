@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://bestcarsiberica.com/</loc>
+    <priority>1.0</priority>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://bestcarsiberica.com/garage</loc>
+    <priority>0.9</priority>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://bestcarsiberica.com/experiencia</loc>
+    <priority>0.7</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://bestcarsiberica.com/terminos</loc>
+    <priority>0.3</priority>
+    <changefreq>yearly</changefreq>
+  </url>
+  <url>
+    <loc>https://bestcarsiberica.com/privacidad</loc>
+    <priority>0.3</priority>
+    <changefreq>yearly</changefreq>
+  </url>
+  <!-- TODO: Las fichas de vehículo (/vehicle/:id) deberían añadirse dinámicamente.
+       Implementar un endpoint en el backend (p. ej. GET /api/sitemap) que genere
+       las URLs de todos los vehículos activos y sirva un sitemap completo. -->
+</urlset>

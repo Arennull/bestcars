@@ -657,7 +657,7 @@ export function SceneEditorSection({
                           src={typeof vehicle.images[0] === "string" && !vehicle.images[0].startsWith("http") && !vehicle.images[0].startsWith("data:")
                             ? getVehicleImageUrl(vehicle.images[0])
                             : vehicle.images[0]}
-                          alt=""
+                          alt={`${vehicle.brand} ${vehicle.model}`}
                           className="w-10 h-10 rounded object-cover shrink-0"
                         />
                       ) : (

@@ -68,7 +68,7 @@ export function HeroGallery({ images }: HeroGalleryProps) {
     processedImages.horizontal.forEach((image, index) => {
       slides.push(
         <div key={`horizontal-${index}`} className="single-image-slide">
-          <img src={image} alt={`Car image ${index + 1}`} loading="lazy" crossOrigin="anonymous" />
+          <img src={image} alt={`Vehículo de lujo Best Cars Ibérica — foto ${index + 1}`} loading="lazy" crossOrigin="anonymous" />
         </div>
       );
     });
@@ -80,7 +80,7 @@ export function HeroGallery({ images }: HeroGalleryProps) {
           <div className="vertical-images-grid">
             {group.map((image, imageIndex) => (
               <div key={imageIndex} className="vertical-image-container">
-                <img src={image} alt={`Car image vertical ${groupIndex * 3 + imageIndex + 1}`} loading="lazy" crossOrigin="anonymous" />
+                <img src={image} alt={`Vehículo de lujo Best Cars Ibérica — foto ${groupIndex * 3 + imageIndex + 1}`} loading="lazy" crossOrigin="anonymous" />
               </div>
             ))}
           </div>

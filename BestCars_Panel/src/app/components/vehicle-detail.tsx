@@ -24,6 +24,7 @@ interface VehicleDetailProps {
 interface DraggableImageProps {
   image: string;
   index: number;
+  vehicleName?: string;
   moveImage: (dragIndex: number, hoverIndex: number) => void;
   onRemove?: (index: number) => void;
   onDragEnd?: () => void;
@@ -36,6 +37,7 @@ interface InternalDragItem {
 const DraggableImage = memo(function DraggableImage({
   image,
   index,
+  vehicleName,
   moveImage,
   onRemove,
   onDragEnd,
@@ -75,7 +77,7 @@ const DraggableImage = memo(function DraggableImage({
       whileHover={{ scale: 1.02 }}
       className="relative aspect-video rounded-xl overflow-hidden border border-white/10 cursor-move group"
     >
-      <ImageWithFallback src={image} alt="" className="w-full h-full object-cover" />
+      <ImageWithFallback src={image} alt={`${vehicleName ?? "Vehículo"} — imagen ${index + 1}`} className="w-full h-full object-cover" />
       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-between p-2">
         <span className="text-xs text-white/80 self-end">Arrastra para reordenar</span>
         {onRemove && (
@@ -343,6 +345,7 @@ export function VehicleDetail({ vehicle, onClose, onUpdate, onWebPreview, onDele
                         key={image}
                         image={image}
                         index={index}
+                        vehicleName={vehicle.name}
                         moveImage={moveImage}
                         onRemove={handleRemoveImage}
                         // Persistimos el orden solo al final del drag (no en cada hover)

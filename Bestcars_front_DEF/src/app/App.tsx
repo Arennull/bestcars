@@ -1,5 +1,5 @@
 import React, { Suspense, lazy } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "sonner";
 import { Footer } from "./components/Footer";
 
@@ -9,6 +9,8 @@ const VehicleDetailPage = lazy(() => import("./pages/VehicleDetailPage"));
 const ScenePreviewPage = lazy(() => import("./pages/ScenePreviewPage"));
 const DynamicScenePage = lazy(() => import("./pages/DynamicScenePage"));
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
+const TermsPage = lazy(() => import("./pages/TermsPage"));
+const PrivacyPage = lazy(() => import("./pages/PrivacyPage"));
 
 function PageLoader() {
   return (
@@ -27,8 +29,11 @@ export default function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/garage" element={<GaragePage />} />
             <Route path="/scene-preview" element={<ScenePreviewPage />} />
-            <Route path="/escena" element={<DynamicScenePage />} />
+            <Route path="/experiencia" element={<DynamicScenePage />} />
+            <Route path="/escena" element={<Navigate to="/experiencia" replace />} />
             <Route path="/vehicle/:id" element={<VehicleDetailPage />} />
+            <Route path="/terminos" element={<TermsPage />} />
+            <Route path="/privacidad" element={<PrivacyPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </Suspense>

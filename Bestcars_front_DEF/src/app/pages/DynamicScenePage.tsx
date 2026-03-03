@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
+import { Helmet } from "react-helmet-async";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { api, type Scene, sceneHotspots } from "../../services/api.js";
 import type { Vehicle } from "../../types/vehicle.js";
@@ -74,7 +75,7 @@ export default function DynamicScenePage() {
     if (idx < 0 || idx >= scenes.length) {
       navigate("/garage");
     } else {
-      navigate(`/escena?index=${idx}`);
+      navigate(`/experiencia?index=${idx}`);
     }
   }, [scenes.length, navigate]);
 
@@ -143,6 +144,16 @@ export default function DynamicScenePage() {
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
+      <Helmet>
+        <title>Experiencia Visual — Best Cars Ibérica</title>
+        <meta name="description" content="Vive la experiencia visual de nuestros coches de lujo en escenarios únicos. Best Cars Ibérica, Ibiza." />
+      </Helmet>
+      <h1
+        className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 text-white text-sm md:text-base font-medium tracking-wide pointer-events-none text-center"
+        style={{ textShadow: '0 2px 8px rgba(0,0,0,0.7)' }}
+      >
+        Experiencia Visual
+      </h1>
       <div
         className="dynamic-scene-page__canvas"
         style={{

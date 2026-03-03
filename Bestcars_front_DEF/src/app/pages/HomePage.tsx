@@ -1,5 +1,6 @@
 import React from "react";
 import { useState, useEffect, useRef } from "react";
+import { Helmet } from "react-helmet-async";
 import { Loader2 } from "lucide-react";
 import houseImage from "../../assets/Bestcars-home.png";
 import CarHotspots from "../components/CarHotspots";
@@ -79,6 +80,16 @@ export function HomePage() {
 
   return (
     <div className="home-page" ref={pageRef}>
+      <Helmet>
+        <title>Best Cars Ibérica — Vehículos de Lujo en Ibiza</title>
+        <meta name="description" content="Descubre nuestra selección exclusiva de vehículos de lujo en Ibiza. Coches premium de las mejores marcas con servicio personalizado." />
+      </Helmet>
+      <h1
+        className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 text-white text-sm md:text-base font-medium tracking-wide pointer-events-none text-center"
+        style={{ textShadow: '0 2px 8px rgba(0,0,0,0.7)' }}
+      >
+        Vehículos de Lujo en Ibiza — Best Cars Ibérica
+      </h1>
       <div className="image-wrapper">
         {/* Loading overlay */}
         {!allImagesLoaded && !hasError && (

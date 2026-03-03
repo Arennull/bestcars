@@ -1,5 +1,6 @@
 import React from 'react';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useParams, Link } from 'react-router-dom';
 import { AlertCircle } from 'lucide-react';
 import {
@@ -64,15 +65,23 @@ export function VehicleDetailPage() {
     api.trackVehicleView(vehicle.id);
   }, [vehicle?.id]);
 
-  // SEO: título dinámico por vehículo (hook siempre en el mismo orden, antes de cualquier return)
-  useEffect(() => {
-    if (!vehicle?.title) return;
-    const title = `${vehicle.title} | Best Cars Ibérica`;
-    document.title = title;
-    return () => {
-      document.title = 'Best Cars Ibérica | Vehículos de Lujo';
+  const seoData = useMemo(() => {
+    const suffix = ' | Best Cars Ibérica';
+    const maxTitleLen = 60;
+    if (!vehicle?.title) {
+      return { title: `Vehículo${suffix}`, description: 'Ficha de vehículo de lujo en Best Cars Ibérica, Ibiza.' };
+    }
+    let vehicleTitle = vehicle.title;
+    if ((vehicleTitle + suffix).length > maxTitleLen) {
+      vehicleTitle = vehicleTitle.slice(0, maxTitleLen - suffix.length - 1) + '…';
+    }
+    const year = vehicle.year ? ` (${vehicle.year})` : '';
+    const desc = `${vehicle.title}${year}. Disponible en Best Cars Ibérica, concesionario de lujo en Ibiza.`;
+    return {
+      title: vehicleTitle + suffix,
+      description: desc.length > 155 ? desc.slice(0, 152) + '…' : desc,
     };
-  }, [vehicle?.title]);
+  }, [vehicle?.title, vehicle?.year]);
 
   if (loading) {
     return <VehicleDetailSkeleton />;
@@ -81,11 +90,15 @@ export function VehicleDetailPage() {
   if (error || !vehicle) {
     return (
       <div className="min-h-screen">
+        <Helmet>
+          <title>Vehículo no encontrado — Best Cars Ibérica</title>
+          <meta name="description" content="No se pudo cargar el vehículo. Vuelve a explorar nuestro catálogo de coches de lujo en Ibiza." />
+        </Helmet>
         <Header />
         <main className="max-w-[1280px] mx-auto my-6 mb-24 px-6">
           <div className="rounded-3xl bg-red-500/10 border border-red-500/20 p-8 text-center">
             <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-            <h2 className="text-xl font-black text-white mb-2">Error al cargar el vehículo</h2>
+            <h1 className="text-xl font-black text-white mb-2">Error al cargar el vehículo</h1>
             <p className="text-white/70">{error || 'Vehículo no encontrado'}</p>
           </div>
         </main>
@@ -99,6 +112,14 @@ export function VehicleDetailPage() {
 
   return (
     <div className="min-h-screen">
+      <Helmet>
+        <title>{seoData.title}</title>
+        <meta name="description" content={seoData.description} />
+        <meta property="og:title" content={seoData.title} />
+        <meta property="og:description" content={seoData.description} />
+        {mappedImages[0] && <meta property="og:image" content={mappedImages[0]} />}
+        <meta property="og:type" content="product" />
+      </Helmet>
       <Header hideCloseButton={true} />
 
       <main className="max-w-[1280px] mx-auto my-6 mb-32 pb-12 px-6">

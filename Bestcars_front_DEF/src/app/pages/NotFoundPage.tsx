@@ -1,4 +1,5 @@
 import React from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
 import { Home } from 'lucide-react';
 import { Header } from '../components/Header';
@@ -8,22 +9,26 @@ export default function NotFoundPage() {
 
   return (
     <div className="min-h-screen bg-[#0B0F19]">
+      <Helmet>
+        <title>Página No Encontrada — Best Cars Ibérica</title>
+        <meta name="description" content="La página que buscas no existe. Vuelve a nuestra web para descubrir los mejores vehículos de lujo en Ibiza." />
+      </Helmet>
       <Header />
       
       <main className="flex items-center justify-center min-h-[calc(100vh-68px)] px-6">
         <div className="text-center max-w-2xl mx-auto">
           {/* Animated 404 */}
           <div className="relative mb-8">
-            <h1 className="text-[180px] md:text-[240px] font-black leading-none text-white/90 animate-pulse">
+            <span className="block text-[180px] md:text-[240px] font-black leading-none text-white/90 animate-pulse" aria-hidden="true">
               404
-            </h1>
+            </span>
           </div>
 
           {/* Message */}
           <div className="space-y-4 mb-12">
-            <h2 className="text-3xl md:text-4xl font-black text-white mb-2">
-              Página no encontrada
-            </h2>
+            <h1 className="text-3xl md:text-4xl font-black text-white mb-2">
+              Página No Encontrada
+            </h1>
             <p className="text-white/70 text-lg md:text-xl">
               Parece que este vehículo se ha ido a dar una vuelta...
             </p>

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Helmet } from "react-helmet-async";
 import { type Scene, sceneHotspots } from "../../services/api.js";
 import type { Vehicle } from "../../types/vehicle.js";
 import SceneHotspots from "../components/SceneHotspots";
@@ -66,6 +67,16 @@ export default function ScenePreviewPage() {
 
   return (
     <div className="w-full h-screen bg-black overflow-hidden">
+      <Helmet>
+        <title>Vista Previa — Best Cars Ibérica</title>
+        <meta name="description" content="Previsualiza nuestros vehículos de lujo en escenarios exclusivos. Best Cars Ibérica, Ibiza." />
+      </Helmet>
+      <h1
+        className="absolute top-4 left-4 z-10 text-white/60 text-xs font-medium tracking-wide pointer-events-none"
+        style={{ textShadow: '0 1px 4px rgba(0,0,0,0.6)' }}
+      >
+        Vista Previa del Escenario
+      </h1>
       <div
         className="relative w-full"
         style={{

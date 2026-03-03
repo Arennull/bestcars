@@ -1,5 +1,6 @@
 import React from "react";
 import { useState, useEffect, useRef } from "react";
+import { Helmet } from "react-helmet-async";
 import { Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 // @ts-expect-error - Importación de imagen con espacios en el nombre
@@ -91,6 +92,16 @@ export default function GaragePage() {
 
   return (
     <div className="garage-page" ref={pageRef}>
+      <Helmet>
+        <title>Nuestro Garaje — Best Cars Ibérica</title>
+        <meta name="description" content="Explora todos los vehículos disponibles en Best Cars Ibérica. Coches de lujo seminuevos y nuevos en Ibiza." />
+      </Helmet>
+      <h1
+        className="fixed top-6 left-1/2 -translate-x-1/2 z-40 text-white text-sm md:text-base font-medium tracking-wide pointer-events-none text-center"
+        style={{ textShadow: '0 2px 8px rgba(0,0,0,0.7)' }}
+      >
+        Nuestro Garaje
+      </h1>
       <div className="image-wrapper">
         {showLoader && (
           <div className="image-loader-overlay">

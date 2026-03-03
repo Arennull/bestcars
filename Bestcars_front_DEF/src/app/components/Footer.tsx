@@ -52,10 +52,10 @@ export function Footer() {
             © {currentYear} Best Cars Ibérica. Todos los derechos reservados.
           </p>
           <div className="flex gap-6 text-xs text-white/40">
-            <Link to="/#terminos" className="hover:text-white/60 transition-colors">
+            <Link to="/terminos" className="hover:text-white/60 transition-colors">
               Términos y condiciones
             </Link>
-            <Link to="/#privacidad" className="hover:text-white/60 transition-colors">
+            <Link to="/privacidad" className="hover:text-white/60 transition-colors">
               Privacidad
             </Link>
           </div>

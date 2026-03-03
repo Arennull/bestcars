@@ -38,7 +38,7 @@ export function NextSceneButton({
   if (fromGarage) {
     if (totalScenes < 1) return null;
     return (
-      <Link to="/escena?index=0" className="scene-nav scene-nav--right" aria-label="Ver escenas">
+      <Link to="/experiencia?index=0" className="scene-nav scene-nav--right" aria-label="Ver escenas">
         <ChevronRight />
         <span className="scene-nav__label">Ver escenas</span>
       </Link>
@@ -53,8 +53,8 @@ export function NextSceneButton({
   const isPrevGarage = prevIndex === 0 && sceneIndex === 1;
   const isNextGarage = nextIndex === 0;
 
-  const prevDest = isPrevGarage ? "/garage" : `/escena?index=${prevIndex}`;
-  const nextDest = isNextGarage ? "/garage" : `/escena?index=${nextIndex}`;
+  const prevDest = isPrevGarage ? "/garage" : `/experiencia?index=${prevIndex}`;
+  const nextDest = isNextGarage ? "/garage" : `/experiencia?index=${nextIndex}`;
 
   const prevLabel = isPrevGarage ? "Garaje" : `Escena ${prevIndex + 1}`;
   const nextLabel = isNextGarage ? "Garaje" : `Escena ${nextIndex + 1}`;

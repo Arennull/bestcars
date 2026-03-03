@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /scene-preview
+
+Sitemap: https://bestcarsiberica.com/sitemap.xml
