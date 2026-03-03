@@ -31,22 +31,21 @@ export function HomePage() {
   useEffect(() => {
     let cancelled = false;
     const load = () => {
-      Promise.all([api.getScenes(), api.getActiveScene(), api.getAllVehicles()])
-        .then(([list, active, vList]) => {
+      Promise.all([api.getScenes(), api.getAllVehicles()])
+        .then(([list, vList]) => {
           if (cancelled) return;
           const scenes = Array.isArray(list) ? (list as Scene[]) : [];
           setScenesCount(scenes.length);
-          const vehiclesSafe = Array.isArray(vList) ? vList : [];
-          setVehicles(vehiclesSafe);
-          if (scenes.length === 0 || !active?.id) {
+          setVehicles(Array.isArray(vList) ? vList : []);
+
+          const principal = scenes[0] ?? null;
+          if (!principal) {
             setHotspots([]);
             setActiveSceneIndex(0);
             return;
           }
-          const idx = scenes.findIndex((s) => s.id === active.id);
-          const index = idx >= 0 ? idx : 0;
-          setActiveSceneIndex(index);
-          const h = sceneHotspots(active as Scene);
+          setActiveSceneIndex(0);
+          const h = sceneHotspots(principal);
           setHotspots(Array.isArray(h) ? h : []);
         })
         .catch(() => {
