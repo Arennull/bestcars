@@ -173,15 +173,15 @@ export default function DynamicScenePage() {
       >
         Experiencia Visual
       </h1>
-      <div
-        key={`scene-${activeScene.id}-${currentIndex}`}
-        className="dynamic-scene-page__canvas"
-        style={{
-          backgroundImage: `url(${background})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      >
+      <div key={activeScene.id} className="dynamic-scene-page__canvas">
+        <img
+          key={activeScene.id}
+          src={background}
+          alt=""
+          className="dynamic-scene-page__canvas-img"
+          loading="eager"
+          decoding="async"
+        />
         <SceneHotspots key={`hotspots-${activeScene.id}`} hotspots={safeHotspots} vehicles={safeVehicles} />
       </div>
       <Link

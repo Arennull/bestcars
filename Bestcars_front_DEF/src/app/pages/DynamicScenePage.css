@@ -14,6 +14,17 @@
   overflow: visible;
 }
 
+.dynamic-scene-page__canvas-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  z-index: 0;
+}
+
 @media (min-aspect-ratio: 8/5) {
   .dynamic-scene-page__canvas {
     width: 100vw;
