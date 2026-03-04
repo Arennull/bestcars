@@ -191,6 +191,28 @@ export function VehicleDetailPage() {
     );
   }
 
+  // Normalizar campos potencialmente no primitivos antes de usarlos en JSX
+  const safeTitle = typeof vehicle.title === 'string' ? vehicle.title : vehicle.id;
+  const safeYear = vehicle.year ?? '';
+  const safeMileage =
+    typeof vehicle.mileage === 'string'
+      ? vehicle.mileage
+      : vehicle.mileage != null
+      ? String(vehicle.mileage)
+      : '';
+  const safePrice =
+    typeof vehicle.price === 'string'
+      ? vehicle.price
+      : vehicle.price != null
+      ? String(vehicle.price)
+      : '';
+  const safePriceSubtext =
+    typeof vehicle.priceSubtext === 'string' ? vehicle.priceSubtext : '';
+  const safeDescription =
+    typeof vehicle.description === 'string'
+      ? vehicle.description
+      : undefined;
+
   const stats = vehicleToStats(vehicle);
   const images = Array.isArray(vehicle.images) ? vehicle.images : [];
   const mappedImages = images.map(getVehicleImageUrl);
@@ -205,15 +227,15 @@ export function VehicleDetailPage() {
         items={[
           { name: "Inicio", url: `${BASE_URL}/` },
           { name: "Garage", url: `${BASE_URL}/garage` },
-          { name: vehicle.title ?? vehicle.id, url: `${BASE_URL}/vehicle/${vehicle.id}` },
+          { name: safeTitle, url: `${BASE_URL}/vehicle/${vehicle.id}` },
         ]}
       />
       <Helmet>
         <link rel="canonical" href={`${BASE_URL}/vehicle/${vehicle.id}`} />
-        <title>{seoData.title}</title>
-        <meta name="description" content={seoData.description} />
-        <meta property="og:title" content={seoData.title} />
-        <meta property="og:description" content={seoData.description} />
+        <title>{String(seoData.title)}</title>
+        <meta name="description" content={String(seoData.description)} />
+        <meta property="og:title" content={String(seoData.title)} />
+        <meta property="og:description" content={String(seoData.description)} />
         <meta property="og:image" content={mappedImages[0] || `${BASE_URL}/favicon.png`} />
         <meta property="og:url" content={`${BASE_URL}/vehicle/${vehicle.id}`} />
         <meta property="og:type" content="product" />
@@ -259,11 +281,11 @@ export function VehicleDetailPage() {
           {/* Left Column */}
           <div>
             <ProductHeader
-              title={vehicle.title ?? vehicle.id}
-              year={Number(vehicle.year) || new Date().getFullYear()}
-              mileage={vehicle.mileage ?? ''}
-              price={vehicle.price ?? ''}
-              priceSubtext={vehicle.priceSubtext ?? ''}
+              title={safeTitle}
+              year={Number(safeYear) || new Date().getFullYear()}
+              mileage={safeMileage}
+              price={safePrice}
+              priceSubtext={safePriceSubtext}
               tags={Array.isArray(vehicle.tags) ? vehicle.tags : []}
               onRequestTestDrive={() => {
                 if (!hasTrackedClick.current) {
@@ -278,7 +300,7 @@ export function VehicleDetailPage() {
 
             <StatsRow stats={stats} />
 
-            <DescriptionSection description={vehicle.description || undefined} />
+            <DescriptionSection description={safeDescription} />
 
             <SpecificationsSection specifications={vehicle.specifications || undefined} />
           </div>
