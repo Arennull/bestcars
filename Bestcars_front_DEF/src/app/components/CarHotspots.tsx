@@ -1,6 +1,7 @@
 import React from "react";
 import "./CarHotspots.css";
 import { Link } from "react-router-dom";
+import { usePrefetchVehicle } from "../../hooks/usePrefetchVehicle.js";
 import type { Vehicle } from "../../types/vehicle.js";
 import type { Hotspot } from "../../services/api.js";
 
@@ -12,6 +13,7 @@ interface CarHotspotsProps {
 export default function CarHotspots({ hotspots, vehicles }: CarHotspotsProps) {
   const safeHotspots = Array.isArray(hotspots) ? hotspots : [];
   const vehicleMap = new Map(vehicles.map((v) => [v.id, v]));
+  const { prefetch, cancel } = usePrefetchVehicle();
 
   if (safeHotspots.length === 0) return null;
 
@@ -32,6 +34,9 @@ export default function CarHotspots({ hotspots, vehicles }: CarHotspotsProps) {
               animationDelay: `${index * 0.15}s`,
             }}
             aria-label={label}
+            onMouseEnter={() => prefetch(vehicle.id)}
+            onMouseLeave={cancel}
+            onTouchStart={() => prefetch(vehicle.id)}
           >
             <span className="hotspot-label" aria-hidden="true">
               {label}

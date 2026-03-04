@@ -1,4 +1,5 @@
 import type { Vehicle, ContactFormData, ContactSubmissionResponse, TestDriveFormData, TestDriveSubmissionResponse } from '../types/vehicle.js';
+import { getCachedVehicle, setCachedVehicle } from './vehicleCache.js';
 
 // Sin barra final para evitar ...dominio.com//api/... (404)
 const API_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3001').replace(/\/+$/, '');
@@ -73,6 +74,20 @@ export const api = {
       images: Array.isArray(raw.images) ? raw.images : [],
       tags: Array.isArray(raw.tags) ? raw.tags : [],
     };
+  },
+
+  /**
+   * Prefetch silencioso: carga el vehículo en segundo plano y lo guarda en caché.
+   * No afecta la UI. Usar en onMouseEnter/onTouchStart para navegación instantánea.
+   */
+  async prefetchVehicle(id: string): Promise<void> {
+    if (getCachedVehicle(id)) return;
+    try {
+      const vehicle = await this.getVehicleById(id);
+      setCachedVehicle(vehicle);
+    } catch {
+      // Silenciar errores (no afectar UX)
+    }
   },
 
   /**

@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronRight } from 'lucide-react';
 import { api, getVehicleImageUrl } from '../../services/api.js';
+import { usePrefetchVehicle } from '../../hooks/usePrefetchVehicle.js';
 import type { Vehicle } from '../../types/vehicle.js';
 
 interface StockMenuProps {
@@ -32,6 +33,7 @@ export function StockMenu({ isOpen: isOpenProp, onOpenChange, hideButton = false
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { prefetch, cancel } = usePrefetchVehicle();
 
   useEffect(() => {
     if (isOpen) {
@@ -204,6 +206,9 @@ export function StockMenu({ isOpen: isOpenProp, onOpenChange, hideButton = false
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.05 * index, duration: 0.2 }}
                         onClick={() => handleSelectCar(vehicle.id)}
+                        onMouseEnter={() => prefetch(vehicle.id)}
+                        onMouseLeave={cancel}
+                        onTouchStart={() => prefetch(vehicle.id)}
                         className="w-full flex items-center gap-4 p-4 rounded-2xl transition-all duration-200 hover:bg-white/10 active:bg-white/15 active:scale-[0.98]"
                         style={{
                           marginBottom: index < vehicles.length - 1 ? '8px' : '0',

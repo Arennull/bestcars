@@ -22,6 +22,7 @@ import { ContactForm, type ContactFormRef } from '../components/ContactForm';
 import { QuizForm } from '../components/QuizForm';
 import { BreadcrumbJsonLd } from '../components/BreadcrumbJsonLd';
 import { api, getVehicleImageUrl } from '../../services/api.js';
+import { getCachedVehicle, setCachedVehicle } from '../../services/vehicleCache.js';
 import { vehicleToStats } from '../../utils/vehicleUtils.js';
 import type { Vehicle } from '../../types/vehicle.js';
 
@@ -115,11 +116,20 @@ export function VehicleDetailPage() {
       return;
     }
 
+    const cached = getCachedVehicle(id);
+    if (cached) {
+      setVehicle(cached);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
     const fetchVehicle = async () => {
       try {
         setLoading(true);
         setError(null);
         const data = await api.getVehicleById(id);
+        setCachedVehicle(data);
         setVehicle(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load vehicle');
