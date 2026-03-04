@@ -65,11 +65,23 @@ export default function ScenePreviewPage() {
     );
   }
 
+  const BASE_URL = "https://bestcarsiberica.com";
+  const ogImage = background.startsWith("http") ? background : new URL(homeImage, BASE_URL).href;
+
   return (
     <div className="w-full h-screen bg-black overflow-hidden">
       <Helmet>
         <title>Vista Previa — Best Cars Ibérica</title>
         <meta name="description" content="Previsualiza nuestros vehículos de lujo en escenarios exclusivos. Best Cars Ibérica, Ibiza." />
+        <meta property="og:title" content="Vista Previa — Best Cars Ibérica" />
+        <meta property="og:description" content="Previsualiza nuestros vehículos de lujo en escenarios exclusivos. Best Cars Ibérica, Ibiza." />
+        <meta property="og:image" content={ogImage} />
+        <meta property="og:url" content={`${BASE_URL}/scene-preview`} />
+        <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Vista Previa — Best Cars Ibérica" />
+        <meta name="twitter:description" content="Previsualiza nuestros vehículos de lujo en escenarios exclusivos. Best Cars Ibérica, Ibiza." />
+        <meta name="twitter:image" content={ogImage} />
       </Helmet>
       <h1
         className="absolute top-4 left-4 z-10 text-white/60 text-xs font-medium tracking-wide pointer-events-none"

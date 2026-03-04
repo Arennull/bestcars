@@ -13,8 +13,8 @@ const useDatabase = Boolean(process.env.DATABASE_URL);
 
 const STATUS_PRIORITY: Record<string, number> = { available: 0, reserved: 1, sold: 2 };
 
-/** Copia mutable para modo MOCK: create/update/delete sin DATABASE_URL */
-function getInMemoryVehicles(): MockVehicle[] {
+/** Copia mutable para modo MOCK: create/update/delete sin DATABASE_URL. Exportado para sitemap. */
+export function getInMemoryVehicles(): MockVehicle[] {
   const key = '__inMemoryVehicles';
   const g = globalThis as unknown as { [k: string]: MockVehicle[] };
   if (!g[key]) {

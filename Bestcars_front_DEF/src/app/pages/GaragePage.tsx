@@ -7,7 +7,10 @@ import { Link } from "react-router-dom";
 import garageImage from "../../assets/Ilustración_sin_título 103.jpg";
 import logoImage from "../../assets/IMG_2007.PNG";
 import { StockMenu } from "../components/StockMenu";
+import { BreadcrumbJsonLd } from "../components/BreadcrumbJsonLd";
 import "./GaragePage.css";
+
+const BASE_URL = "https://bestcarsiberica.com";
 
 const MOBILE_START_POSITION = 50;
 
@@ -47,9 +50,25 @@ export default function GaragePage() {
 
   return (
     <div className="garage-page" ref={pageRef}>
+      <BreadcrumbJsonLd
+        items={[
+          { name: "Inicio", url: `${BASE_URL}/` },
+          { name: "Garage", url: `${BASE_URL}/garage` },
+        ]}
+      />
       <Helmet>
+        <link rel="canonical" href={`${BASE_URL}/garage`} />
         <title>Nuestro Garaje — Best Cars Ibérica</title>
         <meta name="description" content="Explora todos los vehículos disponibles en Best Cars Ibérica. Coches de lujo seminuevos y nuevos en Ibiza." />
+        <meta property="og:title" content="Nuestro Garaje — Best Cars Ibérica" />
+        <meta property="og:description" content="Explora todos los vehículos disponibles en Best Cars Ibérica. Coches de lujo seminuevos y nuevos en Ibiza." />
+        <meta property="og:image" content={new URL(garageImage, BASE_URL).href} />
+        <meta property="og:url" content={`${BASE_URL}/garage`} />
+        <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Nuestro Garaje — Best Cars Ibérica" />
+        <meta name="twitter:description" content="Explora todos los vehículos disponibles en Best Cars Ibérica. Coches de lujo seminuevos y nuevos en Ibiza." />
+        <meta name="twitter:image" content={new URL(garageImage, BASE_URL).href} />
       </Helmet>
       <h1
         className="fixed top-6 left-1/2 -translate-x-1/2 z-40 text-white text-sm md:text-base font-medium tracking-wide pointer-events-none text-center"
@@ -77,9 +96,11 @@ export default function GaragePage() {
         <img
           src={logoImage}
           alt="BEST CARS IBERICA Logo"
+          width={120}
+          height={120}
           className={`garage-logo ${logoImageLoaded ? "loaded" : ""}`}
           loading="eager"
-          fetchpriority="high"
+          fetchPriority="high"
           decoding="async"
           onLoad={() => setLogoImageLoaded(true)}
           onError={() => {

@@ -12,12 +12,16 @@ import testDriveRoutes from './testDriveRoutes.js';
 import sceneRoutes from './sceneRoutes.js';
 import authRoutes from './authRoutes.js';
 import { healthCheck, healthReady } from '../controllers/healthController.js';
+import { getSitemap } from '../controllers/sitemapController.js';
 
 const router = express.Router();
 
 // Health: liveness y readiness (Railway/K8s)
 router.get('/health', healthCheck);
 router.get('/health/ready', healthReady);
+
+// Sitemap XML dinámico (URLs estáticas + vehículos activos)
+router.get('/sitemap', getSitemap);
 
 // Autenticación del panel (POST /api/auth/login)
 router.use('/auth', authRoutes);

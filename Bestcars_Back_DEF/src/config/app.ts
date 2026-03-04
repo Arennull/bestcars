@@ -9,6 +9,7 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import routes from '../routes/index.js';
+import { getSitemap } from '../controllers/sitemapController.js';
 import { errorHandler, notFoundHandler } from '../middleware/errorHandler.js';
 
 dotenv.config();
@@ -70,13 +71,16 @@ const apiRateLimit = rateLimit({
   message: { error: 'Demasiadas peticiones. Intenta más tarde.' },
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => req.path.includes('/vehicles/images/'),
+  skip: (req) => req.path.includes('/vehicles/images/') || req.path === '/sitemap',
 });
 app.use('/api', apiRateLimit);
 
 
 // Parser de JSON para req.body
 app.use(express.json({ limit: '1mb' }));
+
+// Sitemap XML en raíz para que /sitemap.xml funcione (robots.txt apunta aquí)
+app.get('/sitemap.xml', getSitemap);
 
 // Raíz: mensaje informativo (evita 404 al abrir la URL en el navegador)
 app.get('/', (_req, res) => {

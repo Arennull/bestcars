@@ -4,14 +4,27 @@ import { useNavigate } from 'react-router-dom';
 import { Home } from 'lucide-react';
 import { Header } from '../components/Header';
 
+const BASE_URL = 'https://bestcarsiberica.com';
+const DEFAULT_OG_IMAGE = `${BASE_URL}/favicon.png`;
+
 export default function NotFoundPage() {
   const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-[#0B0F19]">
       <Helmet>
+        <link rel="canonical" href={BASE_URL} />
         <title>Página No Encontrada — Best Cars Ibérica</title>
         <meta name="description" content="La página que buscas no existe. Vuelve a nuestra web para descubrir los mejores vehículos de lujo en Ibiza." />
+        <meta property="og:title" content="Página No Encontrada — Best Cars Ibérica" />
+        <meta property="og:description" content="La página que buscas no existe. Vuelve a nuestra web para descubrir los mejores vehículos de lujo en Ibiza." />
+        <meta property="og:image" content={DEFAULT_OG_IMAGE} />
+        <meta property="og:url" content={typeof window !== 'undefined' ? window.location.href : BASE_URL} />
+        <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Página No Encontrada — Best Cars Ibérica" />
+        <meta name="twitter:description" content="La página que buscas no existe. Vuelve a nuestra web para descubrir los mejores vehículos de lujo en Ibiza." />
+        <meta name="twitter:image" content={DEFAULT_OG_IMAGE} />
       </Helmet>
       <Header />
       

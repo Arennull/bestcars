@@ -5,6 +5,7 @@ import { api, type Scene, sceneHotspots } from "../../services/api.js";
 import type { Vehicle } from "../../types/vehicle.js";
 import SceneHotspots from "../components/SceneHotspots";
 import NextSceneButton from "../components/NextSceneButton";
+import { BreadcrumbJsonLd } from "../components/BreadcrumbJsonLd";
 // @ts-expect-error - Imagen con espacios en el nombre (fallback de fondo)
 import fallbackImage from "../../assets/Ilustración_sin_título 103.jpg";
 import "./DynamicScenePage.css";
@@ -138,15 +139,33 @@ export default function DynamicScenePage() {
     );
   }
 
+  const BASE_URL = "https://bestcarsiberica.com";
+
   return (
     <div
       className="dynamic-scene-page"
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
+      <BreadcrumbJsonLd
+        items={[
+          { name: "Inicio", url: `${BASE_URL}/` },
+          { name: "Experiencia", url: `${BASE_URL}/experiencia` },
+        ]}
+      />
       <Helmet>
+        <link rel="canonical" href={`${BASE_URL}/experiencia`} />
         <title>Experiencia Visual — Best Cars Ibérica</title>
         <meta name="description" content="Vive la experiencia visual de nuestros coches de lujo en escenarios únicos. Best Cars Ibérica, Ibiza." />
+        <meta property="og:title" content="Experiencia Visual — Best Cars Ibérica" />
+        <meta property="og:description" content="Vive la experiencia visual de nuestros coches de lujo en escenarios únicos. Best Cars Ibérica, Ibiza." />
+        <meta property="og:image" content={background.startsWith("http") ? background : new URL(fallbackImage, BASE_URL).href} />
+        <meta property="og:url" content={`${BASE_URL}/experiencia`} />
+        <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Experiencia Visual — Best Cars Ibérica" />
+        <meta name="twitter:description" content="Vive la experiencia visual de nuestros coches de lujo en escenarios únicos. Best Cars Ibérica, Ibiza." />
+        <meta name="twitter:image" content={background.startsWith("http") ? background : new URL(fallbackImage, BASE_URL).href} />
       </Helmet>
       <h1
         className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 text-white text-sm md:text-base font-medium tracking-wide pointer-events-none text-center"

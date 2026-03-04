@@ -221,6 +221,8 @@ export function StockMenu({ isOpen: isOpenProp, onOpenChange, hideButton = false
                             <img 
                               src={thumbnail} 
                               alt={vehicle.title} 
+                              width={56}
+                              height={56}
                               className="w-full h-full object-cover"
                             />
                           ) : (

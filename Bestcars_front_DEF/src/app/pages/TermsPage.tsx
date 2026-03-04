@@ -2,13 +2,32 @@ import React from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
 import { Header } from '../components/Header';
+import { BreadcrumbJsonLd } from '../components/BreadcrumbJsonLd';
+
+const BASE_URL = 'https://bestcarsiberica.com';
 
 export default function TermsPage() {
   return (
     <div className="min-h-screen bg-[#070A10]">
+      <BreadcrumbJsonLd
+        items={[
+          { name: 'Inicio', url: `${BASE_URL}/` },
+          { name: 'Términos y condiciones', url: `${BASE_URL}/terminos` },
+        ]}
+      />
       <Helmet>
+        <link rel="canonical" href={`${BASE_URL}/terminos`} />
         <title>Términos y Condiciones — Best Cars Ibérica</title>
         <meta name="description" content="Términos y condiciones de uso del sitio web de Best Cars Ibérica, concesionario de vehículos de lujo en Ibiza." />
+        <meta property="og:title" content="Términos y Condiciones — Best Cars Ibérica" />
+        <meta property="og:description" content="Términos y condiciones de uso del sitio web de Best Cars Ibérica, concesionario de vehículos de lujo en Ibiza." />
+        <meta property="og:image" content={`${BASE_URL}/favicon.png`} />
+        <meta property="og:url" content={`${BASE_URL}/terminos`} />
+        <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Términos y Condiciones — Best Cars Ibérica" />
+        <meta name="twitter:description" content="Términos y condiciones de uso del sitio web de Best Cars Ibérica, concesionario de vehículos de lujo en Ibiza." />
+        <meta name="twitter:image" content={`${BASE_URL}/favicon.png`} />
       </Helmet>
       <Header />
       <main className="max-w-3xl mx-auto px-6 py-12 text-white/80 text-sm leading-relaxed">

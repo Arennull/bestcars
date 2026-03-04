@@ -23,6 +23,8 @@ export function Header({ hideCloseButton = false }: HeaderProps) {
             <img 
               src={logoImage} 
               alt="BEST CARS IBERICA Logo" 
+              width={180}
+              height={56}
               className="h-14 w-auto pointer-events-none"
             />
           </button>

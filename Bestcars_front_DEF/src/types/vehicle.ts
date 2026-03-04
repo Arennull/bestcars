@@ -23,6 +23,7 @@ export interface Vehicle {
   images: string[];
   tags: string[];
   specifications?: VehicleSpecifications | null;
+  status?: string;
   createdAt: string;
   updatedAt: string;
 }

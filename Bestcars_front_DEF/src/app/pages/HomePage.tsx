@@ -8,9 +8,36 @@ import GarageArrow from "../components/GarageArrow";
 import { NextSceneButton } from "../components/NextSceneButton";
 import { StockMenu } from "../components/StockMenu";
 import { TermsAndConditions } from "../components/TermsAndConditions";
+import { BreadcrumbJsonLd } from "../components/BreadcrumbJsonLd";
 import { api, sceneHotspots, type Scene } from "../../services/api.js";
 import type { Vehicle } from "../../types/vehicle.js";
 import "./HomePage.css";
+
+const BASE_URL = "https://bestcarsiberica.com";
+
+const organizationLocalBusinessSchema = {
+  "@context": "https://schema.org",
+  "@type": ["Organization", "AutoDealer"],
+  name: "Best Cars Ibérica",
+  url: BASE_URL,
+  logo: `${BASE_URL}/favicon.png`,
+  description: "Best Cars Ibérica es un concesionario de coches de lujo en Madrid. Especialistas en vehículos premium de marcas como Audi, BMW y Porsche. Stock exclusivo, asesoramiento personalizado y experiencia de compra premium.",
+  address: {
+    "@type": "PostalAddress",
+    addressLocality: "Madrid",
+    addressRegion: "Comunidad de Madrid",
+    addressCountry: "ES",
+  },
+  geo: {
+    "@type": "GeoCoordinates",
+    latitude: 40.4168,
+    longitude: -3.7038,
+  },
+  telephone: "+34659164104",
+  openingHours: "Mo-Sa 10:00-20:00",
+  sameAs: ["https://www.instagram.com/bestcarsiberica/"],
+  image: new URL(houseImage, BASE_URL).href,
+};
 
 // ========== ADJUST MOBILE START POSITION ==========
 // Percentage of image to show initially on mobile (0-100)
@@ -80,9 +107,23 @@ export function HomePage() {
 
   return (
     <div className="home-page" ref={pageRef}>
+      <BreadcrumbJsonLd items={[{ name: "Inicio", url: `${BASE_URL}/` }]} />
       <Helmet>
+        <link rel="canonical" href={`${BASE_URL}`} />
         <title>Best Cars Ibérica — Vehículos de Lujo en Ibiza</title>
         <meta name="description" content="Descubre nuestra selección exclusiva de vehículos de lujo en Ibiza. Coches premium de las mejores marcas con servicio personalizado." />
+        <meta property="og:title" content="Best Cars Ibérica — Vehículos de Lujo en Ibiza" />
+        <meta property="og:description" content="Descubre nuestra selección exclusiva de vehículos de lujo en Ibiza. Coches premium de las mejores marcas con servicio personalizado." />
+        <meta property="og:image" content={new URL(houseImage, BASE_URL).href} />
+        <meta property="og:url" content={`${BASE_URL}/`} />
+        <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Best Cars Ibérica — Vehículos de Lujo en Ibiza" />
+        <meta name="twitter:description" content="Descubre nuestra selección exclusiva de vehículos de lujo en Ibiza. Coches premium de las mejores marcas con servicio personalizado." />
+        <meta name="twitter:image" content={new URL(houseImage, BASE_URL).href} />
+        <script type="application/ld+json">
+          {JSON.stringify(organizationLocalBusinessSchema)}
+        </script>
       </Helmet>
       <h1
         className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 text-white text-sm md:text-base font-medium tracking-wide pointer-events-none text-center"
@@ -105,8 +146,10 @@ export function HomePage() {
           src={houseImage} 
           alt="Luxurious modern house with architectural lighting" 
           className={`home-image ${allImagesLoaded ? 'loaded' : ''}`}
+          width={5803}
+          height={3264}
           loading="eager"
-          fetchpriority="high"
+          fetchPriority="high"
           decoding="async"
           onLoad={() => setHouseImageLoaded(true)}
           onError={() => {

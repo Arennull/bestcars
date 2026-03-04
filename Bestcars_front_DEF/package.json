@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "vite build",
+    "build:prerender": "vite build && node scripts/prerender.mjs",
     "dev": "vite",
     "preview": "vite preview --port 5173",
     "serve": "npx serve -s dist -p 5173",
@@ -86,7 +87,8 @@
     "tailwindcss": "4.1.12",
     "typescript-eslint": "^8.18.2",
     "vite": "6.3.5",
-    "vite-plugin-image-optimizer": "^2.0.3"
+    "vite-plugin-image-optimizer": "^2.0.3",
+    "vite-plugin-prerender": "^1.0.8"
   },
   "pnpm": {
     "overrides": {
