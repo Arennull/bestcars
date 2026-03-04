@@ -1,37 +1,18 @@
 import { defineConfig } from 'vite'
 import path from 'path'
-import fs from 'fs'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { ViteImageOptimizer } from 'vite-plugin-image-optimizer'
 
-/** Inyecta preload de la imagen hero LCP (WebP) tras el build para mejorar Core Web Vitals */
-function preloadHeroImagePostBuild() {
-  return {
-    name: 'preload-hero-post',
-    apply: 'build',
-    closeBundle() {
-      const outDir = path.resolve(process.cwd(), 'dist')
-      const heroDir = path.join(outDir, 'hero')
-      const indexPath = path.join(outDir, 'index.html')
-      if (!fs.existsSync(heroDir) || !fs.existsSync(indexPath)) return
-      let html = fs.readFileSync(indexPath, 'utf-8')
-      if (html.includes('hero-desktop.webp')) return
-      const preloads = [
-        '<link rel="preload" as="image" href="/hero/hero-desktop.webp" type="image/webp" fetchpriority="high" media="(min-width: 769px)">',
-        '<link rel="preload" as="image" href="/hero/hero-mobile.webp" type="image/webp" fetchpriority="high" media="(max-width: 768px)">',
-      ].map((p) => `    ${p}`).join('\n')
-      html = html.replace('</head>', `${preloads}\n  </head>`)
-      fs.writeFileSync(indexPath, html)
-    },
-  }
-}
+// Nota: Se eliminó preloadHeroImagePostBuild porque en SPA el preload se inyectaba
+// en todas las rutas (/, /experiencia, etc.) pero la imagen hero solo se usa en HomePage.
+// En /experiencia el navegador preloadaba hero-desktop.webp sin usarla → warning.
+// HomePage ya usa fetchPriority="high" y loading="eager" en el img para LCP.
 
 export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
-    preloadHeroImagePostBuild(),
     ViteImageOptimizer({
       logStats: true,
       jpeg: { quality: 85 },
