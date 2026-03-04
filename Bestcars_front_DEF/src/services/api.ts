@@ -18,6 +18,14 @@ export function getVehicleImageUrl(filenameOrUrl: string): string {
   return `${API_VEHICLES_IMAGES}/${encodeURIComponent(s)}`;
 }
 
+/** URL absoluta para fondo de escena (panorámica). Si es relativa, se resuelve contra el API. */
+export function getSceneBackgroundUrl(url: string | undefined): string {
+  if (!url || typeof url !== 'string') return '';
+  const s = url.trim();
+  if (/^https?:\/\//i.test(s) || s.startsWith('data:')) return s;
+  return `${API_BASE_URL}/${s.replace(/^\//, '')}`;
+}
+
 class ApiError extends Error {
   constructor(public status: number, message: string) {
     super(message);

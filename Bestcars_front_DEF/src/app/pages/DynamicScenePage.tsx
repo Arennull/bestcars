@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
-import { api, type Scene, sceneHotspots } from "../../services/api.js";
+import { api, getSceneBackgroundUrl, type Scene, sceneHotspots } from "../../services/api.js";
 import type { Vehicle } from "../../types/vehicle.js";
 import SceneHotspots from "../components/SceneHotspots";
 import NextSceneButton from "../components/NextSceneButton";
@@ -21,8 +21,14 @@ export default function DynamicScenePage() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [sceneViewKey, setSceneViewKey] = useState(0);
 
   const currentIndex = indexParam !== null ? Math.max(0, parseInt(indexParam, 10) || 0) : 0;
+
+  // Cada vez que cambia la escena (incl. volver a la principal), nueva key → remontaje y src distinto → repintado
+  useEffect(() => {
+    setSceneViewKey((k) => k + 1);
+  }, [currentIndex]);
 
   const loadSceneData = useCallback((index: string | null) => {
     let cancelled = false;
@@ -114,6 +120,11 @@ export default function DynamicScenePage() {
     activeScene?.backgroundUrl?.trim()
       ? activeScene.backgroundUrl
       : fallbackImage;
+  const imgSrc =
+    activeScene?.backgroundUrl?.trim()
+      ? getSceneBackgroundUrl(activeScene.backgroundUrl)
+      : fallbackImage;
+  const imgSrcWithKey = `${imgSrc}${imgSrc.includes("?") ? "&" : "?"}_v=${sceneViewKey}`;
 
   if (loading) {
     return (
@@ -173,14 +184,20 @@ export default function DynamicScenePage() {
       >
         Experiencia Visual
       </h1>
-      <div key={activeScene.id} className="dynamic-scene-page__canvas">
+      <div key={`${activeScene.id}-${sceneViewKey}`} className="dynamic-scene-page__canvas">
         <img
-          key={activeScene.id}
-          src={background}
+          key={`${activeScene.id}-${sceneViewKey}`}
+          src={imgSrcWithKey}
           alt=""
           className="dynamic-scene-page__canvas-img"
           loading="eager"
           decoding="async"
+          onError={(e) => {
+            const el = e.currentTarget;
+            if (!el.src.includes(fallbackImage)) {
+              el.src = fallbackImage;
+            }
+          }}
         />
         <SceneHotspots key={`hotspots-${activeScene.id}`} hotspots={safeHotspots} vehicles={safeVehicles} />
       </div>
