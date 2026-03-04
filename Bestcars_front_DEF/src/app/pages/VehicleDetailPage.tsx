@@ -55,13 +55,16 @@ function getColorFromSpecs(specs: Vehicle['specifications']): string | undefined
 }
 
 function buildCarJsonLd(vehicle: Vehicle, imageUrls: string[]): Record<string, unknown> {
-  const status = vehicle.status ?? 'available';
-  const priceNum = parsePrice(vehicle.price);
-  const mileageNum = parseMileage(vehicle.mileage);
+  const status = typeof vehicle.status === 'string' ? vehicle.status : 'available';
+  const priceStr = vehicle.price != null ? String(vehicle.price) : '';
+  const mileageStr = vehicle.mileage != null ? String(vehicle.mileage) : '';
+  const priceNum = parsePrice(priceStr);
+  const mileageNum = parseMileage(mileageStr);
   const color = getColorFromSpecs(vehicle.specifications);
-  const titleParts = vehicle.title?.trim().split(/\s+/) ?? [];
+  const titleStr = vehicle.title != null ? String(vehicle.title).trim() : '';
+  const titleParts = titleStr ? titleStr.split(/\s+/) : [];
   const brandName = titleParts[0] || undefined;
-  const modelName = titleParts.length > 1 ? titleParts.slice(1).join(' ') : vehicle.title?.trim();
+  const modelName = titleParts.length > 1 ? titleParts.slice(1).join(' ') : titleStr;
 
   const offers =
     priceNum !== undefined
@@ -74,22 +77,26 @@ function buildCarJsonLd(vehicle: Vehicle, imageUrls: string[]): Record<string, u
         }
       : undefined;
 
+  const yearVal = vehicle.year != null ? String(vehicle.year) : undefined;
+  const descVal = vehicle.description != null ? String(vehicle.description).trim() : undefined;
+  const fuelVal = vehicle.fuelType != null ? String(vehicle.fuelType).trim() : undefined;
+
   const schema: Record<string, unknown> = {
     '@context': 'https://schema.org',
     '@type': 'Car',
-    name: [vehicle.title, vehicle.year].filter(Boolean).join(' '),
-    description: vehicle.description?.trim() || undefined,
+    name: [titleStr, yearVal].filter(Boolean).join(' '),
+    description: descVal || undefined,
     image: imageUrls.length > 0 ? imageUrls : undefined,
     url: `${BASE_URL}/vehicle/${vehicle.id}`,
     brand: brandName ? { '@type': 'Brand', name: brandName } : undefined,
     model: modelName || undefined,
-    vehicleModelDate: vehicle.year || undefined,
+    vehicleModelDate: yearVal || undefined,
     offers,
     mileageFromOdometer:
       mileageNum !== undefined
         ? { '@type': 'QuantitativeValue', value: mileageNum, unitCode: 'KMT' }
         : undefined,
-    fuelType: vehicle.fuelType?.trim() || undefined,
+    fuelType: fuelVal || undefined,
     color: color || undefined,
   };
 
@@ -151,17 +158,18 @@ export function VehicleDetailPage() {
   const seoData = useMemo(() => {
     const suffix = ' | Best Cars Ibérica';
     const maxTitleLen = 60;
-    if (!vehicle?.title) {
+    const titleStr = vehicle?.title != null ? String(vehicle.title).trim() : '';
+    const yearStr = vehicle?.year != null ? String(vehicle.year) : '';
+    if (!titleStr) {
       return { title: `Vehículo en Madrid${suffix}`, description: 'Ficha de vehículo de lujo en Best Cars Ibérica, Madrid. Compra y venta de coches premium.' };
     }
-    // Formato: "{Marca} {Modelo} en Madrid | Best Cars Ibérica"
-    const baseTitle = `${vehicle.title} en Madrid`;
+    const baseTitle = `${titleStr} en Madrid`;
     let title = baseTitle + suffix;
     if (title.length > maxTitleLen) {
       title = baseTitle.slice(0, maxTitleLen - suffix.length - 2) + '…' + suffix;
     }
-    const year = vehicle.year ? ` (${vehicle.year})` : '';
-    const desc = `${vehicle.title}${year} en Madrid. Disponible en Best Cars Ibérica. Compra y venta de vehículos premium.`;
+    const yearPart = yearStr ? ` (${yearStr})` : '';
+    const desc = `${titleStr}${yearPart} en Madrid. Disponible en Best Cars Ibérica. Compra y venta de vehículos premium.`;
     return {
       title,
       description: desc.length > 155 ? desc.slice(0, 152) + '…' : desc,
@@ -240,8 +248,8 @@ export function VehicleDetailPage() {
         <meta property="og:url" content={`${BASE_URL}/vehicle/${vehicle.id}`} />
         <meta property="og:type" content="product" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={seoData.title} />
-        <meta name="twitter:description" content={seoData.description} />
+        <meta name="twitter:title" content={String(seoData.title)} />
+        <meta name="twitter:description" content={String(seoData.description)} />
         <meta name="twitter:image" content={mappedImages[0] || `${BASE_URL}/favicon.png`} />
         <script type="application/ld+json">{JSON.stringify(carSchema)}</script>
       </Helmet>
@@ -268,7 +276,7 @@ export function VehicleDetailPage() {
               <span className="text-white/30">/</span>
             </BreadcrumbSeparator>
             <BreadcrumbItem>
-              <BreadcrumbPage className="text-white truncate max-w-[200px]">{vehicle.title}</BreadcrumbPage>
+              <BreadcrumbPage className="text-white truncate max-w-[200px]">{safeTitle}</BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
@@ -295,7 +303,7 @@ export function VehicleDetailPage() {
                 setIsQuizOpen(true);
               }}
               vehicleId={vehicle.id}
-              vehicleTitle={vehicle.title ?? vehicle.id}
+              vehicleTitle={safeTitle}
             />
 
             <StatsRow stats={stats} />
@@ -309,7 +317,7 @@ export function VehicleDetailPage() {
           <ContactForm
             ref={contactFormRef}
             vehicleId={vehicle.id}
-            vehicleTitle={vehicle.title}
+            vehicleTitle={safeTitle}
             onFirstInteraction={() => {
               if (!hasTrackedClick.current) {
                 hasTrackedClick.current = true;
@@ -324,7 +332,7 @@ export function VehicleDetailPage() {
         isOpen={isQuizOpen}
         onClose={() => setIsQuizOpen(false)}
         vehicleId={vehicle.id}
-        vehicleTitle={vehicle.title ?? vehicle.id}
+        vehicleTitle={safeTitle}
       />
     </div>
   );

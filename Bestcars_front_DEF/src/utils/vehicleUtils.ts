@@ -76,35 +76,35 @@ export interface StatItem {
 export function vehicleToStats(vehicle: Vehicle): StatItem[] {
   const stats: StatItem[] = [];
 
-  if (vehicle.fuelType) {
+  if (vehicle.fuelType != null && String(vehicle.fuelType).trim()) {
     stats.push({
       icon: Fuel,
       label: 'Combustible',
-      value: vehicle.fuelType,
+      value: String(vehicle.fuelType).trim(),
     });
   }
 
-  if (vehicle.mileage) {
+  if (vehicle.mileage != null && String(vehicle.mileage).trim()) {
     stats.push({
       icon: Gauge,
       label: 'Kilometraje',
-      value: vehicle.mileage,
+      value: String(vehicle.mileage).trim(),
     });
   }
 
-  if (vehicle.seats) {
+  if (vehicle.seats != null && String(vehicle.seats).trim()) {
     stats.push({
       icon: Users,
       label: 'Asientos',
-      value: vehicle.seats,
+      value: String(vehicle.seats).trim(),
     });
   }
 
-  if (vehicle.year) {
+  if (vehicle.year != null) {
     stats.push({
       icon: Calendar,
       label: 'Año',
-      value: vehicle.year.toString(),
+      value: String(vehicle.year),
     });
   }
 
