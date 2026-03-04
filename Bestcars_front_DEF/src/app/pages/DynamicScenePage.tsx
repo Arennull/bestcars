@@ -24,7 +24,7 @@ export default function DynamicScenePage() {
 
   const currentIndex = indexParam !== null ? Math.max(0, parseInt(indexParam, 10) || 0) : 0;
 
-  const loadSceneData = () => {
+  const loadSceneData = useCallback((index: string | null) => {
     let cancelled = false;
     setLoading(true);
     setError(false);
@@ -36,8 +36,8 @@ export default function DynamicScenePage() {
         setVehicles(Array.isArray(vList) ? vList : []);
 
         const byIndex =
-          indexParam !== null && indexParam !== ""
-            ? Math.max(0, parseInt(indexParam, 10) || 0)
+          index !== null && index !== ""
+            ? Math.max(0, parseInt(index, 10) || 0)
             : null;
 
         let chosen: Scene | null = null;
@@ -57,20 +57,20 @@ export default function DynamicScenePage() {
     return () => {
       cancelled = true;
     };
-  };
+  }, []);
 
   useEffect(() => {
-    const cancel = loadSceneData();
+    const cancel = loadSceneData(indexParam);
     return cancel;
-  }, [indexParam]);
+  }, [indexParam, loadSceneData]);
 
   useEffect(() => {
     const onVisible = () => {
-      if (document.visibilityState === "visible") loadSceneData();
+      if (document.visibilityState === "visible") loadSceneData(indexParam);
     };
     document.addEventListener("visibilitychange", onVisible);
     return () => document.removeEventListener("visibilitychange", onVisible);
-  }, [indexParam]);
+  }, [indexParam, loadSceneData]);
 
   const goToScene = useCallback((idx: number) => {
     if (idx < 0 || idx >= scenes.length) {
@@ -174,6 +174,7 @@ export default function DynamicScenePage() {
         Experiencia Visual
       </h1>
       <div
+        key={`scene-${activeScene.id}-${currentIndex}`}
         className="dynamic-scene-page__canvas"
         style={{
           backgroundImage: `url(${background})`,
@@ -181,7 +182,7 @@ export default function DynamicScenePage() {
           backgroundPosition: "center",
         }}
       >
-        <SceneHotspots hotspots={safeHotspots} vehicles={safeVehicles} />
+        <SceneHotspots key={`hotspots-${activeScene.id}`} hotspots={safeHotspots} vehicles={safeVehicles} />
       </div>
       <Link
         to="/"
