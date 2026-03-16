@@ -64,15 +64,13 @@ export function useSceneEditorApi(
     Promise.all([getScenes(), getActiveScene()])
       .then(([scenes, activeScene]) => {
         if (cancelled) return;
-        if (scenes.length === 0) return;
-
-        const editorScenes = scenes.map(apiSceneToEditorScene);
+        const editorScenes = (scenes ?? []).map(apiSceneToEditorScene);
         const webPrincipalId = activeScene?.id ?? null;
         const defaultSelectedId = webPrincipalId ?? editorScenes[0]?.id ?? null;
         setStorage((prev) => ({
           ...prev,
           scenes: editorScenes,
-          activeSceneId: defaultSelectedId ?? prev.activeSceneId,
+          activeSceneId: editorScenes.length > 0 ? (defaultSelectedId ?? prev.activeSceneId) : null,
           activeHotspotId: prev.activeHotspotId,
           previewUrl: prev.previewUrl,
           webActiveSceneId: webPrincipalId,

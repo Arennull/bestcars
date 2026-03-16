@@ -50,9 +50,10 @@ export default function DynamicScenePage() {
         let chosen: Scene | null = null;
         if (byIndex !== null && sceneList[byIndex]) {
           chosen = sceneList[byIndex];
-        } else {
-          chosen = sceneList[0] ?? null;
+        } else if (sceneList.length > 0) {
+          chosen = sceneList[0];
         }
+        if (chosen && !chosen.backgroundUrl?.trim()) chosen = null;
         setActiveScene(chosen);
       })
       .catch(() => {
@@ -141,7 +142,7 @@ export default function DynamicScenePage() {
     );
   }
 
-  if (error || !activeScene) {
+  if (error || !activeScene || !activeScene.backgroundUrl?.trim()) {
     return (
       <div className="dynamic-scene-page dynamic-scene-page--empty">
         <p className="text-white/60">
