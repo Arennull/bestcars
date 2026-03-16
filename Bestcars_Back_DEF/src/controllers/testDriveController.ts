@@ -28,6 +28,24 @@ const REQUIRED_FIELDS: (keyof TestDriveRequestBody)[] = [
 
 const useDatabase = Boolean(process.env.DATABASE_URL);
 
+/** Almacén en memoria para test-drive cuando no hay DATABASE_URL (mismo patrón que contact). */
+interface InMemoryTestDrive {
+  id: number;
+  vehicleId: string | null;
+  vehicleTitle: string | null;
+  name: string;
+  age: string;
+  lastVehicle: string;
+  interests: string;
+  mainUse: string;
+  status: string;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+const inMemoryTestDrives: InMemoryTestDrive[] = [];
+let inMemoryTestDriveNextId = 1;
+
 /**
  * POST /api/test-drive
  */
@@ -74,7 +92,23 @@ export const submitTestDrive = async (
         submissionId = generateSubmissionId();
       }
     } else {
-      submissionId = generateSubmissionId();
+      const id = inMemoryTestDriveNextId++;
+      const now = new Date().toISOString();
+      inMemoryTestDrives.unshift({
+        id,
+        vehicleId: vehicleId ?? null,
+        vehicleTitle: vehicleTitle ?? null,
+        name: name.trim(),
+        age: age.trim(),
+        lastVehicle: lastVehicle.trim(),
+        interests: interests.trim(),
+        mainUse: mainUse.trim(),
+        status: 'new',
+        notes: null,
+        createdAt: now,
+        updatedAt: now,
+      });
+      submissionId = id;
     }
 
     try {
@@ -87,7 +121,9 @@ export const submitTestDrive = async (
         vehicleId,
         vehicleTitle,
       });
-      console.log('📧 Test drive submission sent:', { vehicleId, vehicleTitle, name, age });
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('📧 Test drive submission sent:', { vehicleId, vehicleTitle, name, age });
+      }
     } catch (emailError) {
       console.error('[testDriveController] Error sending email:', emailError);
       res.status(201).json({
@@ -142,7 +178,7 @@ export const getAllTestDrives = async (_req: Request, res: Response): Promise<vo
       );
       return;
     }
-    res.json([]);
+    res.json([...inMemoryTestDrives]);
   } catch (error) {
     console.error('[testDriveController] Error fetching test drives:', error);
     res.status(500).json({
@@ -172,11 +208,28 @@ export const updateTestDrive = async (req: Request, res: Response): Promise<void
     const { status, notes } = req.body ?? {};
 
     if (!useDatabase) {
-      res.status(501).json({
-        error: {
-          message: 'Update test drive requires DATABASE_URL',
-          code: 'NOT_IMPLEMENTED',
-        },
+      const index = inMemoryTestDrives.findIndex((s) => s.id === id);
+      if (index === -1) {
+        res.status(404).json({ error: { message: 'Test drive not found', code: 'NOT_FOUND' } });
+        return;
+      }
+      const s = inMemoryTestDrives[index];
+      if (status !== undefined) s.status = String(status).trim() || 'new';
+      if (notes !== undefined) s.notes = notes === null || notes === '' ? null : String(notes).trim();
+      s.updatedAt = new Date().toISOString();
+      res.json({
+        id: s.id,
+        vehicleId: s.vehicleId,
+        vehicleTitle: s.vehicleTitle,
+        name: s.name,
+        age: s.age,
+        lastVehicle: s.lastVehicle,
+        interests: s.interests,
+        mainUse: s.mainUse,
+        status: s.status,
+        notes: s.notes,
+        createdAt: s.createdAt,
+        updatedAt: s.updatedAt,
       });
       return;
     }
@@ -240,12 +293,13 @@ export const deleteTestDrive = async (req: Request, res: Response): Promise<void
       return;
     }
     if (!useDatabase) {
-      res.status(501).json({
-        error: {
-          message: 'Delete test drive requires DATABASE_URL',
-          code: 'NOT_IMPLEMENTED',
-        },
-      });
+      const index = inMemoryTestDrives.findIndex((s) => s.id === id);
+      if (index === -1) {
+        res.status(404).json({ error: { message: 'Test drive not found', code: 'NOT_FOUND' } });
+        return;
+      }
+      inMemoryTestDrives.splice(index, 1);
+      res.status(204).send();
       return;
     }
     await prisma.testDriveSubmission.delete({ where: { id } });

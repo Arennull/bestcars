@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import type { SceneEditorStorage, Scene, Hotspot } from "../app/types/scene-editor";
 import {
   getScenes,
+  getActiveScene,
   createScene as apiCreateScene,
   updateScene as apiUpdateScene,
   deleteScene as apiDeleteScene,
@@ -60,20 +61,21 @@ export function useSceneEditorApi(
     let cancelled = false;
     setLoading(true);
 
-    getScenes()
-      .then((scenes) => {
+    Promise.all([getScenes(), getActiveScene()])
+      .then(([scenes, activeScene]) => {
         if (cancelled) return;
         if (scenes.length === 0) return;
 
         const editorScenes = scenes.map(apiSceneToEditorScene);
-        const principalId = editorScenes[0]?.id;
+        const webPrincipalId = activeScene?.id ?? null;
+        const defaultSelectedId = webPrincipalId ?? editorScenes[0]?.id ?? null;
         setStorage((prev) => ({
           ...prev,
           scenes: editorScenes,
-          activeSceneId: principalId ?? prev.activeSceneId,
+          activeSceneId: defaultSelectedId ?? prev.activeSceneId,
           activeHotspotId: prev.activeHotspotId,
           previewUrl: prev.previewUrl,
-          webActiveSceneId: principalId ?? null,
+          webActiveSceneId: webPrincipalId,
         }));
       })
       .catch((err) => {
@@ -163,13 +165,14 @@ export function useSceneEditorApi(
 
       setStorage((prev) => {
         const next = prev.scenes.filter((s) => s.id !== sceneId);
-        const principalId = next[0]?.id ?? null;
+        const fallbackId = next[0]?.id ?? null;
+        const wasWebPrincipal = prev.webActiveSceneId === sceneId;
         return {
           ...prev,
           scenes: next,
-          activeSceneId: prev.activeSceneId === sceneId ? principalId : prev.activeSceneId,
+          activeSceneId: prev.activeSceneId === sceneId ? fallbackId : prev.activeSceneId,
           activeHotspotId: prev.activeSceneId === sceneId ? null : prev.activeHotspotId,
-          webActiveSceneId: principalId,
+          webActiveSceneId: wasWebPrincipal ? fallbackId : prev.webActiveSceneId,
         };
       });
       toast.success("Escena eliminada");
@@ -182,6 +185,7 @@ export function useSceneEditorApi(
       if (!apiMode || !isAuthenticated) return false;
       try {
         await apiSetActiveScene(sceneId);
+        setStorage((prev) => ({ ...prev, webActiveSceneId: sceneId }));
         if (options?.silentSuccess !== true) toast.success("Escena activada en la web");
         return true;
       } catch (err) {
@@ -189,7 +193,7 @@ export function useSceneEditorApi(
         return false;
       }
     },
-    [apiMode, isAuthenticated]
+    [apiMode, isAuthenticated, setStorage]
   );
 
   const duplicateSceneApi = useCallback(
@@ -216,17 +220,17 @@ export function useSceneEditorApi(
     [apiMode, isAuthenticated, setStorage]
   );
 
-  /** Refresca cache local: GET /api/scenes (tras Guardar). */
+  /** Refresca cache local: GET /api/scenes + escena activa (tras Guardar / Activar). */
   const refreshScenesFromApi = useCallback(async () => {
     if (!apiMode || !isAuthenticated) return;
     try {
-      const scenes = await getScenes();
+      const [scenes, activeScene] = await Promise.all([getScenes(), getActiveScene()]);
       const editorScenes = scenes.map(apiSceneToEditorScene);
-      const principalId = editorScenes[0]?.id;
+      const webPrincipalId = activeScene?.id ?? null;
       setStorage((prev) => ({
         ...prev,
         scenes: editorScenes,
-        webActiveSceneId: principalId ?? null,
+        webActiveSceneId: webPrincipalId,
       }));
     } catch {
       // silenciar

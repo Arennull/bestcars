@@ -127,7 +127,9 @@ export const submitContact = async (
         vehicleId,
         vehicleTitle,
       });
-      console.log('📧 Contact submission sent:', { vehicleId, vehicleTitle, name, email });
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('📧 Contact submission sent:', { vehicleId, vehicleTitle, name, email });
+      }
     } catch (emailError) {
       console.error('[contactController] Error sending email:', emailError);
       res.status(201).json({

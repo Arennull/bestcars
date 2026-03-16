@@ -118,36 +118,34 @@ export const getAllVehicles = async (_req: Request, res: Response): Promise<void
   try {
     if (useDatabase) {
       const [vehicles, leadCounts] = await Promise.all([
-        prisma.vehicle.findMany({ orderBy: { createdAt: 'desc' } }),
+        prisma.vehicle.findMany({ orderBy: [{ priority: 'asc' }, { updatedAt: 'desc' }] }),
         getLeadCountsByVehicleId(),
       ]);
-      const vWithStats = (v: { id: string; views?: number; clicks?: number; status?: string }) => ({
+      const vWithStats = (v: { id: string; views?: number; clicks?: number; status?: string; priority?: number }) => ({
         views: (v as { views?: number }).views ?? 0,
         clicks: (v as { clicks?: number }).clicks ?? 0,
         status: (v as { status?: string }).status ?? 'available',
-      });
-      vehicles.sort((a, b) => {
-        const sa = (a as { status?: string }).status ?? 'available';
-        const sb = (b as { status?: string }).status ?? 'available';
-        const diff = (STATUS_PRIORITY[sa] ?? 3) - (STATUS_PRIORITY[sb] ?? 3);
-        if (diff !== 0) return diff;
-        return b.createdAt.getTime() - a.createdAt.getTime();
+        priority: (v as { priority?: number }).priority ?? 0,
       });
       res.json(
-        vehicles.map((v, i) =>
+        vehicles.map((v) =>
           formatVehicle(v, {
             leads: leadCounts[v.id] ?? 0,
             views: vWithStats(v).views,
             clicks: vWithStats(v).clicks,
             status: vWithStats(v).status,
-            priority: i + 1,
+            priority: vWithStats(v).priority,
           })
         )
       );
       return;
     }
     const mockList = getInMemoryVehicles();
+    const withPriority = (v: MockVehicle & { priority?: number }) => (v as { priority?: number }).priority ?? 999;
     mockList.sort((a, b) => {
+      const pa = withPriority(a);
+      const pb = withPriority(b);
+      if (pa !== pb) return pa - pb;
       const sa = a.status ?? 'available';
       const sb = b.status ?? 'available';
       const diff = (STATUS_PRIORITY[sa] ?? 3) - (STATUS_PRIORITY[sb] ?? 3);
@@ -155,9 +153,10 @@ export const getAllVehicles = async (_req: Request, res: Response): Promise<void
       return b.createdAt.getTime() - a.createdAt.getTime();
     });
     res.json(
-      mockList.map((v) => ({
+      mockList.map((v, i) => ({
         ...v,
         status: v.status ?? 'available',
+        priority: (v as { priority?: number }).priority ?? i + 1,
         createdAt: v.createdAt.toISOString(),
         updatedAt: v.updatedAt.toISOString(),
       }))
@@ -187,7 +186,7 @@ export const trackVehicle = async (req: Request, res: Response): Promise<void> =
     const { id } = req.params;
     const type = (req.body?.type ?? '').toString().toLowerCase();
     if (!id || (type !== 'view' && type !== 'click')) {
-      res.status(400).json({ error: 'Invalid request. Body: { type: "view" | "click" }' });
+      res.status(400).json({ error: { message: 'Invalid request. Body: { type: "view" | "click" }', code: 'VALIDATION_ERROR' } });
       return;
     }
     const vehicle = await prisma.vehicle.findUnique({ where: { id } });
@@ -211,7 +210,7 @@ export const trackVehicle = async (req: Request, res: Response): Promise<void> =
     res.status(204).send();
   } catch (error) {
     console.error('[vehicleController] Error tracking vehicle:', error);
-    res.status(500).json({ error: 'Failed to track' });
+    res.status(500).json({ error: { message: 'Failed to track', code: 'INTERNAL_ERROR' } });
   }
 };
 
@@ -225,7 +224,7 @@ export const getVehicleById = async (req: Request, res: Response): Promise<void>
     if (useDatabase) {
       const vehicle = await prisma.vehicle.findUnique({ where: { id } });
       if (!vehicle) {
-        res.status(404).json({ error: 'Vehicle not found' });
+        res.status(404).json({ error: { message: 'Vehicle not found', code: 'NOT_FOUND' } });
         return;
       }
       const [contactCount, testDriveCount] = await Promise.all([
@@ -235,13 +234,14 @@ export const getVehicleById = async (req: Request, res: Response): Promise<void>
       const views = (vehicle as { views?: number }).views ?? 0;
       const clicks = (vehicle as { clicks?: number }).clicks ?? 0;
       const status = (vehicle as { status?: string }).status ?? 'available';
+      const priority = (vehicle as { priority?: number }).priority ?? 0;
       res.json(
         formatVehicle(vehicle, {
           leads: contactCount + testDriveCount,
           views,
           clicks,
           status,
-          priority: 0,
+          priority,
         })
       );
       return;
@@ -249,12 +249,13 @@ export const getVehicleById = async (req: Request, res: Response): Promise<void>
 
     const vehicle = getInMemoryVehicles().find((v) => v.id === id);
     if (!vehicle) {
-      res.status(404).json({ error: 'Vehicle not found' });
+      res.status(404).json({ error: { message: 'Vehicle not found', code: 'NOT_FOUND' } });
       return;
     }
     res.json({
       ...vehicle,
       status: vehicle.status ?? 'available',
+      priority: (vehicle as { priority?: number }).priority ?? 0,
       createdAt: vehicle.createdAt.toISOString(),
       updatedAt: vehicle.updatedAt.toISOString(),
     });
@@ -293,7 +294,9 @@ export const createVehicle = async (
 
   if (!useDatabase) {
     const now = new Date();
-    const newVehicle: MockVehicle = {
+    const list = getInMemoryVehicles();
+    const newPriority = list.length + 1;
+    const newVehicle = {
       id: generateVehicleId(),
       title,
       year,
@@ -309,10 +312,12 @@ export const createVehicle = async (
       status: (body.status as string)?.trim() || 'available',
       createdAt: now,
       updatedAt: now,
-    };
-    getInMemoryVehicles().unshift(newVehicle);
+      priority: newPriority,
+    } as MockVehicle & { priority?: number };
+    (list as (MockVehicle & { priority?: number })[]).unshift(newVehicle);
     res.status(201).json({
       ...newVehicle,
+      priority: newPriority,
       createdAt: newVehicle.createdAt.toISOString(),
       updatedAt: newVehicle.updatedAt.toISOString(),
     });
@@ -371,6 +376,7 @@ export const updateVehicle = async (req: Request, res: Response): Promise<void> 
   if (body.tags !== undefined) data.tags = Array.isArray(body.tags) ? body.tags : [];
   if (body.specifications !== undefined) data.specifications = body.specifications as MockVehicle['specifications'];
   if (body.status !== undefined) data.status = String(body.status).trim() || 'available';
+  if (body.priority !== undefined) (data as { priority?: number }).priority = Math.max(0, Number(body.priority) || 0);
 
   if (!useDatabase) {
     const list = getInMemoryVehicles();
@@ -386,8 +392,9 @@ export const updateVehicle = async (req: Request, res: Response): Promise<void> 
     }
     const now = new Date();
     const cleanData = Object.fromEntries(Object.entries(data).filter(([, v]) => v !== undefined)) as Partial<MockVehicle>;
-    const updated: MockVehicle = { ...list[idx], ...cleanData, updatedAt: now };
-    list[idx] = updated;
+    const updated = { ...list[idx], ...cleanData, updatedAt: now } as MockVehicle & { priority?: number };
+    if ((data as { priority?: number }).priority !== undefined) (updated as { priority?: number }).priority = (data as { priority?: number }).priority;
+    list[idx] = updated as MockVehicle;
     res.json({
       ...updated,
       createdAt: updated.createdAt.toISOString(),
@@ -410,6 +417,7 @@ export const updateVehicle = async (req: Request, res: Response): Promise<void> 
       ...(data.tags !== undefined && { tags: data.tags }),
       ...(data.specifications !== undefined && { specifications: data.specifications as unknown as Prisma.InputJsonValue }),
       ...(data.status !== undefined && { status: data.status }),
+      ...((data as { priority?: number }).priority !== undefined && { priority: (data as { priority?: number }).priority }),
     } as Prisma.VehicleUpdateInput;
     const vehicle = await prisma.vehicle.update({
       where: { id },

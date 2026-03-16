@@ -119,10 +119,14 @@ Rutas con **Auth**: cabecera `Authorization: Bearer <token>` (token de `/api/aut
 
 5. **Health**: Railway puede usar `GET /api/health` o `GET /api/health/ready` para comprobar que el servicio está listo.
 
-6. **Si obtienes 500 en `/api/vehicles` o `/api/scenes`**:
+6. **Cambio de contraseña (panel)**: La opción "Cambiar contraseña" del panel guarda la nueva contraseña en un archivo local (`.admin-password`). En Railway el filesystem es efímero: tras un redeploy ese archivo desaparece y la app vuelve a usar `ADMIN_PASSWORD` de variables de entorno. Para cambiar la contraseña en producción, actualiza la variable `ADMIN_PASSWORD` en Railway.
+
+7. **Si obtienes 500 en `/api/vehicles` o `/api/scenes`**:
    - Comprueba que hayas ejecutado **una vez** `npx prisma db push` con la URL **directa** (puerto 5432) de Supabase; sin eso las tablas no existen.
    - Si usas la URL del **pooler** (puerto 6543) en `DATABASE_URL`, añade al final: `?pgbouncer=true` (ej. `...postgres?pgbouncer=true`) para evitar errores de prepared statements.
    - Revisa los logs del servicio en Railway; el mensaje de error indicará si es conexión o tablas faltantes.
+
+8. **Schema con `priority` (orden de vehículos)**: Si actualizas el schema y añades el campo `priority` al modelo `Vehicle`, ejecuta una vez `npx prisma db push` con la URL **directa** (5432) desde tu máquina para que la columna exista en Supabase. Luego en producción la app usará el pooler (6543) con `pgbouncer=true`.
 
 ---
 

@@ -72,19 +72,19 @@ export const changePassword = (req: Request<object, object, ChangePasswordBody>,
   const { currentPassword, newPassword } = req.body ?? ({} as ChangePasswordBody);
 
   if (!currentPassword || !newPassword || typeof newPassword !== 'string') {
-    res.status(400).json({ error: 'currentPassword and newPassword are required' });
+    res.status(400).json({ error: { message: 'currentPassword and newPassword are required', code: 'VALIDATION_ERROR' } });
     return;
   }
 
   const adminPass = getAdminPassword();
   if (!safeEquals(currentPassword, adminPass)) {
-    res.status(400).json({ error: 'Contraseña actual incorrecta' });
+    res.status(400).json({ error: { message: 'Contraseña actual incorrecta', code: 'AUTH_INVALID' } });
     return;
   }
 
   const trimmed = newPassword.trim();
   if (trimmed.length < 6) {
-    res.status(400).json({ error: 'La nueva contraseña debe tener al menos 6 caracteres' });
+    res.status(400).json({ error: { message: 'La nueva contraseña debe tener al menos 6 caracteres', code: 'VALIDATION_ERROR' } });
     return;
   }
 
@@ -92,6 +92,6 @@ export const changePassword = (req: Request<object, object, ChangePasswordBody>,
     writeFileSync(ADMIN_PASSWORD_FILE, trimmed, 'utf8');
     res.json({ success: true, message: 'Contraseña actualizada' });
   } catch (err) {
-    res.status(500).json({ error: 'No se pudo guardar la contraseña' });
+    res.status(500).json({ error: { message: 'No se pudo guardar la contraseña', code: 'INTERNAL_ERROR' } });
   }
 };

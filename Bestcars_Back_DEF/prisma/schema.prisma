@@ -29,6 +29,7 @@ model Vehicle {
   status        String   @default("available")  // available | reserved | sold
   views         Int      @default(0)
   clicks        Int      @default(0)
+  priority      Int      @default(0)
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 

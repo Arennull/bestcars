@@ -246,11 +246,21 @@ export interface ScenePosition {
   updatedAt: string;
 }
 
-/** Escenas para /experiencia: excluye la del Garaje. Misma lista para navegación e imagen. */
+/**
+ * Escenas para /experiencia: solo las del editor, excluyendo la escena principal (Home).
+ * - Excluye la escena activa (isActive === true), que es la principal de la Home.
+ * - Excluye por nombre garaje|garage.
+ * - Excluye escenas sin backgroundUrl válido (evita fallback engañoso a imagen de garaje).
+ */
 export function getScenesForExperiencia(list: Scene[]): Scene[] {
   const arr = Array.isArray(list) ? list : [];
-  const filtered = arr.filter((s) => s?.name && !/garaje|garage/i.test(s.name.trim()));
-  return filtered.length > 0 ? filtered : arr;
+  return arr.filter((s) => {
+    if (!s?.name?.trim()) return false;
+    if (s.isActive === true) return false;
+    if (/garaje|garage/i.test(s.name.trim())) return false;
+    if (!s.backgroundUrl?.trim()) return false;
+    return true;
+  });
 }
 
 /** Convierte scene.positions (legacy) a Hotspot[] si no hay scene.hotspots */

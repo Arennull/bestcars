@@ -617,6 +617,9 @@ export function WebPreviewModal({ isOpen, onClose, vehicle }: WebPreviewModalPro
                       animate={{ opacity: 1, x: 0 }}
                       className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.05] to-white/[0.02] backdrop-blur-xl p-6 shadow-2xl"
                     >
+                      <p className="text-amber-400/90 text-sm mb-4 rounded-lg bg-amber-500/10 border border-amber-500/20 px-3 py-2">
+                        Vista previa solo visual. Este formulario no envía datos; los leads se generan desde la web pública.
+                      </p>
                       <h3 className="text-xl text-white mb-6">¿Interesado en este vehículo?</h3>
                       
                       <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
