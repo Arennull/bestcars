@@ -11,7 +11,7 @@ import { Vehicle } from "../data/mock-data";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { useLocalStorageState } from "../hooks/use-local-storage-state";
 import { useSceneEditorApi, apiSceneToEditorScene } from "../../hooks/useSceneEditorApi";
-import { createScene as apiCreateScene, getVehicleImageUrl } from "../../services/api";
+import { createScene as apiCreateScene, getVehicleImageUrl, uploadSceneBackground } from "../../services/api";
 import {
   type Hotspot,
   type Scene,
@@ -381,6 +381,61 @@ export function SceneEditorSection({
 
   const [newSceneName, setNewSceneName] = useState("");
   const [newSceneBg, setNewSceneBg] = useState("");
+  const [uploadingNewSceneBg, setUploadingNewSceneBg] = useState(false);
+  const [uploadingActiveSceneBg, setUploadingActiveSceneBg] = useState(false);
+
+  const handleNewSceneBackgroundFile = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Selecciona un archivo de imagen");
+      return;
+    }
+    setUploadingNewSceneBg(true);
+    try {
+      const { url } = await uploadSceneBackground(file);
+      setNewSceneBg(url);
+      toast.success("Fondo subido correctamente");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Error al subir el fondo");
+    } finally {
+      setUploadingNewSceneBg(false);
+    }
+  }, []);
+
+  const handleUploadActiveSceneBackground = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      e.target.value = "";
+      if (!file) return;
+      if (!activeScene) return;
+      if (!file.type.startsWith("image/")) {
+        toast.error("Selecciona un archivo de imagen");
+        return;
+      }
+      setUploadingActiveSceneBg(true);
+      try {
+        const { url } = await uploadSceneBackground(file);
+        const updated: Scene = {
+          ...activeScene,
+          backgroundUrl: url,
+          updatedAt: nowIso(),
+        };
+        setStorage((prev) => ({
+          ...prev,
+          scenes: prev.scenes.map((s) => (s.id === activeScene.id ? updated : s)),
+        }));
+        setIsDirty(true);
+        toast.success("Fondo subido correctamente");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Error al subir el fondo");
+      } finally {
+        setUploadingActiveSceneBg(false);
+      }
+    },
+    [activeScene, setStorage]
+  );
 
   const isPotentiallyInvalidBackgroundUrl = (url: string) => {
     const trimmed = url.trim();
@@ -508,15 +563,31 @@ export function SceneEditorSection({
               value={newSceneBg}
               onChange={(e) => setNewSceneBg(e.target.value)}
               placeholder="URL del fondo (opcional)"
-              className="w-full px-3 py-2 rounded-xl bg-white/[0.03] border border-white/10 text-white/80 placeholder:text-white/30 focus:outline-none focus:border-blue-500/50"
+              disabled={uploadingNewSceneBg}
+              className="w-full px-3 py-2 rounded-xl bg-white/[0.03] border border-white/10 text-white/80 placeholder:text-white/30 focus:outline-none focus:border-blue-500/50 disabled:opacity-50"
             />
+            <label
+              className={`flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white/80 transition-all hover:border-white/20 hover:bg-white/[0.05] ${uploadingNewSceneBg ? "pointer-events-none opacity-50" : ""}`}
+            >
+              <input
+                type="file"
+                accept="image/*"
+                disabled={uploadingNewSceneBg}
+                onChange={handleNewSceneBackgroundFile}
+                className="sr-only"
+                aria-label="Subir imagen de fondo desde archivo"
+              />
+              <ImageIcon className="h-4 w-4 shrink-0 text-white/50" />
+              {uploadingNewSceneBg ? "Subiendo fondo…" : "Subir fondo desde archivo"}
+            </label>
             <button
               onClick={() => {
                 createScene(newSceneName, newSceneBg);
                 setNewSceneName("");
                 setNewSceneBg("");
               }}
-              className="w-full px-4 py-2 rounded-xl bg-white/[0.03] border border-white/10 hover:border-white/20 hover:bg-white/[0.05] transition-all text-white/80 text-sm flex items-center justify-center gap-2"
+              disabled={uploadingNewSceneBg}
+              className="w-full px-4 py-2 rounded-xl bg-white/[0.03] border border-white/10 hover:border-white/20 hover:bg-white/[0.05] transition-all text-white/80 text-sm flex items-center justify-center gap-2 disabled:opacity-50"
             >
               <Plus className="w-4 h-4" />
               Nueva escena
@@ -714,28 +785,45 @@ export function SceneEditorSection({
                 <span className="truncate">{SCENE_PRINCIPAL_IMAGE_URL}</span>
               </div>
             ) : (
-              <input
-                value={activeScene?.backgroundUrl ?? ""}
-                onChange={(e) => {
-                  if (!activeScene) return;
-                  const url = e.target.value;
-                  const updated: Scene = {
-                    ...activeScene,
-                    backgroundUrl: url,
-                    updatedAt: nowIso(),
-                  };
-                  setStorage((prev) => ({
-                    ...prev,
-                    scenes: prev.scenes.map((s) => (s.id === activeScene.id ? updated : s)),
-                  }));
-                  setIsDirty(true);
-                  if (isPotentiallyInvalidBackgroundUrl(url)) {
-                    toast.warning("Para producción usa una URL http(s) o un path absoluto (ej. /mi-fondo.png).");
-                  }
-                }}
-                placeholder="URL del fondo"
-                className="w-full px-3 py-2 rounded-xl bg-white/[0.03] border border-white/10 text-white/80 placeholder:text-white/30 focus:outline-none focus:border-blue-500/50"
-              />
+              <div className="space-y-2">
+                <input
+                  value={activeScene?.backgroundUrl ?? ""}
+                  onChange={(e) => {
+                    if (!activeScene) return;
+                    const url = e.target.value;
+                    const updated: Scene = {
+                      ...activeScene,
+                      backgroundUrl: url,
+                      updatedAt: nowIso(),
+                    };
+                    setStorage((prev) => ({
+                      ...prev,
+                      scenes: prev.scenes.map((s) => (s.id === activeScene.id ? updated : s)),
+                    }));
+                    setIsDirty(true);
+                    if (isPotentiallyInvalidBackgroundUrl(url)) {
+                      toast.warning("Para producción usa una URL http(s) o un path absoluto (ej. /mi-fondo.png).");
+                    }
+                  }}
+                  placeholder="URL del fondo"
+                  disabled={uploadingActiveSceneBg}
+                  className="w-full px-3 py-2 rounded-xl bg-white/[0.03] border border-white/10 text-white/80 placeholder:text-white/30 focus:outline-none focus:border-blue-500/50 disabled:opacity-50"
+                />
+                <label
+                  className={`flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white/80 transition-all hover:border-white/20 hover:bg-white/[0.05] ${uploadingActiveSceneBg ? "pointer-events-none opacity-50" : ""}`}
+                >
+                  <input
+                    type="file"
+                    accept="image/*"
+                    disabled={uploadingActiveSceneBg}
+                    onChange={handleUploadActiveSceneBackground}
+                    className="sr-only"
+                    aria-label="Subir imagen de fondo de la escena desde archivo"
+                  />
+                  <ImageIcon className="h-4 w-4 shrink-0 text-white/50" />
+                  {uploadingActiveSceneBg ? "Subiendo fondo…" : "Subir fondo desde archivo"}
+                </label>
+              </div>
             )}
           </div>
 
