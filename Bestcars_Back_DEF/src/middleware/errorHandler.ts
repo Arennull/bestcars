@@ -4,6 +4,7 @@
  */
 
 import { type Request, type Response, type NextFunction } from 'express';
+import multer from 'multer';
 
 /** Error extendido con código de estado y códigos de Prisma */
 export type AppError = Error & { status?: number; code?: string };
@@ -26,6 +27,13 @@ export const errorHandler = (
   let status = err.status ?? 500;
   if (err.code === 'P2002') status = 409;
   if (err.code === 'P2025') status = 404;
+
+  if (err instanceof multer.MulterError) {
+    if (err.code === 'LIMIT_FILE_SIZE') status = 413;
+    else status = 400;
+  } else if (err.message === 'Only image files are allowed') {
+    status = 400;
+  }
 
   const message =
     err.message ||

@@ -9,6 +9,7 @@ import { HTML5Backend } from 'react-dnd-html5-backend';
 import { toast } from 'sonner';
 import { X, Pencil, Save, Calendar, TrendingDown, TrendingUp, Video, Play, Eye, Trash2, Plus } from 'lucide-react';
 import { Vehicle } from '../data/mock-data';
+import { uploadVehicleImage } from '../../services/api';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -122,6 +123,7 @@ export function VehicleDetail({ vehicle, onClose, onUpdate, onWebPreview, onDele
   const [tags, setTags] = useState<string[]>(vehicle.tags ?? []);
   const [showAddImage, setShowAddImage] = useState(false);
   const [newImageUrl, setNewImageUrl] = useState('');
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   // Sincroniza estado local cuando cambia el vehículo (ej. tras actualización desde fuera)
   useEffect(() => {
@@ -174,6 +176,39 @@ export function VehicleDetail({ vehicle, onClose, onUpdate, onWebPreview, onDele
     setShowAddImage(false);
     onUpdate(vehicle.id, { images: updated });
   };
+
+  const handleImageFiles = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const list = e.target.files;
+      e.target.value = "";
+      if (!list?.length) return;
+      const files = Array.from(list);
+      const imageFiles = files.filter((f) => f.type.startsWith("image/"));
+      for (const file of files) {
+        if (!file.type.startsWith("image/")) {
+          toast.error(`${file.name} no es una imagen válida`);
+        }
+      }
+      if (!imageFiles.length) return;
+      setUploadingImage(true);
+      try {
+        const urls: string[] = [];
+        for (const file of imageFiles) {
+          const { url } = await uploadVehicleImage(file);
+          urls.push(url);
+        }
+        const updated = [...images, ...urls];
+        setImages(updated);
+        onUpdate(vehicle.id, { images: updated });
+        toast.success(imageFiles.length === 1 ? "Imagen subida" : `${imageFiles.length} imágenes subidas`);
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Error al subir la imagen");
+      } finally {
+        setUploadingImage(false);
+      }
+    },
+    [images, onUpdate, vehicle.id]
+  );
 
   const handleSaveDescription = () => {
     onUpdate(vehicle.id, { description });
@@ -338,11 +373,28 @@ export function VehicleDetail({ vehicle, onClose, onUpdate, onWebPreview, onDele
 
                 {/* Gallery */}
                 <div>
-                  <h3 className="text-sm text-white/70 mb-3">Galería de imágenes (arrastra para reordenar)</h3>
+                  <h3 className="text-sm text-white/70 mb-2">Galería de imágenes (arrastra para reordenar)</h3>
+                  <div className="mb-3 flex flex-wrap items-center gap-2">
+                    <label
+                      className={`inline-flex cursor-pointer items-center gap-2 rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-xs text-white hover:bg-white/10 ${uploadingImage ? "pointer-events-none opacity-50" : ""}`}
+                    >
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        disabled={uploadingImage}
+                        onChange={handleImageFiles}
+                        className="sr-only"
+                        aria-label="Subir imágenes desde el ordenador"
+                      />
+                      {uploadingImage ? "Subiendo…" : "Subir desde ordenador"}
+                    </label>
+                    <span className="text-white/40 text-xs">o botón + para URL</span>
+                  </div>
                   <div className="grid grid-cols-3 gap-4">
                     {images.map((image, index) => (
                       <DraggableImage
-                        key={image}
+                        key={`${vehicle.id}-img-${index}`}
                         image={image}
                         index={index}
                         vehicleName={vehicle.name}
@@ -361,7 +413,8 @@ export function VehicleDetail({ vehicle, onClose, onUpdate, onWebPreview, onDele
                           value={newImageUrl}
                           onChange={(e) => setNewImageUrl(e.target.value)}
                           placeholder="URL de la imagen"
-                          className="flex-1 min-h-0 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm placeholder:text-white/40 focus:outline-none focus:border-blue-500/50"
+                          disabled={uploadingImage}
+                          className="flex-1 min-h-0 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm placeholder:text-white/40 focus:outline-none focus:border-blue-500/50 disabled:opacity-50"
                           autoFocus
                         />
                         <div className="flex gap-2">
@@ -389,7 +442,8 @@ export function VehicleDetail({ vehicle, onClose, onUpdate, onWebPreview, onDele
                       <button
                         type="button"
                         onClick={() => setShowAddImage(true)}
-                        className="aspect-video rounded-xl border-2 border-dashed border-white/20 hover:border-white/40 bg-white/[0.02] hover:bg-white/[0.06] flex items-center justify-center transition-colors"
+                        disabled={uploadingImage}
+                        className="aspect-video rounded-xl border-2 border-dashed border-white/20 hover:border-white/40 bg-white/[0.02] hover:bg-white/[0.06] flex items-center justify-center transition-colors disabled:opacity-50"
                         title="Añadir imagen"
                       >
                         <Plus className="w-10 h-10 text-white/50" />

@@ -15,6 +15,10 @@ import {
   deleteVehicle,
   trackVehicle,
 } from '../controllers/vehicleController.js';
+import {
+  uploadVehicleImage,
+  vehicleImageUpload,
+} from '../controllers/storageController.js';
 import { requireAuth } from '../middleware/auth.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
@@ -56,6 +60,13 @@ router.get('/images/:filename', (req: Request, res: Response) => {
     if (!res.headersSent) res.status(500).end();
   }
 });
+
+router.post(
+  '/upload-image',
+  requireAuth,
+  vehicleImageUpload.single('image'),
+  asyncHandler(uploadVehicleImage)
+);
 
 router.get('/:id', asyncHandler(getVehicleById));
 router.post('/:id/track', asyncHandler(trackVehicle));

@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
 import { X, Plus, Trash2 } from "lucide-react";
 import { Vehicle } from "../data/mock-data";
+import { uploadVehicleImage } from "../../services/api";
 
 interface CreateVehicleModalProps {
   isOpen: boolean;
@@ -45,6 +46,7 @@ export function CreateVehicleModal({ isOpen, onClose, onSave }: CreateVehicleMod
 
   const [currentTag, setCurrentTag] = useState('');
   const [currentImage, setCurrentImage] = useState('');
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
@@ -96,6 +98,7 @@ export function CreateVehicleModal({ isOpen, onClose, onSave }: CreateVehicleMod
     });
     setCurrentTag("");
     setCurrentImage("");
+    setUploadingImage(false);
   }, []);
 
   const addTag = useCallback(() => {
@@ -118,6 +121,35 @@ export function CreateVehicleModal({ isOpen, onClose, onSave }: CreateVehicleMod
 
   const removeImage = useCallback((index: number) => {
     setFormData((prev) => ({ ...prev, images: prev.images.filter((_, i) => i !== index) }));
+  }, []);
+
+  const handleImageFiles = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const list = e.target.files;
+    e.target.value = "";
+    if (!list?.length) return;
+    const files = Array.from(list);
+    const imageFiles = files.filter((f) => f.type.startsWith("image/"));
+    for (const file of files) {
+      if (!file.type.startsWith("image/")) {
+        toast.error(`${file.name} no es una imagen válida`);
+      }
+    }
+    if (!imageFiles.length) return;
+    setUploadingImage(true);
+    try {
+      for (const file of imageFiles) {
+        const { url } = await uploadVehicleImage(file);
+        setFormData((prev) => ({
+          ...prev,
+          images: prev.images.includes(url) ? prev.images : [...prev.images, url],
+        }));
+      }
+      toast.success(imageFiles.length === 1 ? "Imagen subida" : `${imageFiles.length} imágenes subidas`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Error al subir la imagen");
+    } finally {
+      setUploadingImage(false);
+    }
   }, []);
 
   if (!isOpen) return null;
@@ -323,6 +355,23 @@ export function CreateVehicleModal({ isOpen, onClose, onSave }: CreateVehicleMod
             {/* Images */}
             <div className="space-y-4">
               <h3 className="text-lg text-white/90">Imágenes</h3>
+              <div className="flex flex-wrap items-center gap-3">
+                <label
+                  className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/20 bg-white/5 text-sm text-white cursor-pointer hover:bg-white/10 transition-colors ${uploadingImage ? "opacity-50 pointer-events-none" : ""}`}
+                >
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    disabled={uploadingImage}
+                    onChange={handleImageFiles}
+                    className="sr-only"
+                    aria-label="Subir imágenes desde el ordenador"
+                  />
+                  {uploadingImage ? "Subiendo…" : "Subir desde ordenador"}
+                </label>
+                <span className="text-white/40 text-sm">o añade URL</span>
+              </div>
               <div className="flex gap-2">
                 <input
                   type="url"
@@ -330,12 +379,14 @@ export function CreateVehicleModal({ isOpen, onClose, onSave }: CreateVehicleMod
                   onChange={(e) => setCurrentImage(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addImage())}
                   placeholder="URL de imagen (Unsplash, etc.)"
-                  className="flex-1 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:outline-none focus:border-blue-500/50"
+                  disabled={uploadingImage}
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:outline-none focus:border-blue-500/50 disabled:opacity-50"
                 />
                 <button
                   type="button"
                   onClick={addImage}
-                  className="px-4 py-2.5 rounded-xl bg-blue-500/20 border border-blue-500/30 hover:bg-blue-500/30 text-white transition-colors"
+                  disabled={uploadingImage}
+                  className="px-4 py-2.5 rounded-xl bg-blue-500/20 border border-blue-500/30 hover:bg-blue-500/30 text-white transition-colors disabled:opacity-50"
                 >
                   <Plus className="w-5 h-5" />
                 </button>
