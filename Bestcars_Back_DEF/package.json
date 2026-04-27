@@ -13,6 +13,7 @@
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx scripts/seed.ts",
     "db:sync-images": "tsx scripts/sync-vehicle-images-from-mock.ts",
+    "qa:env": "tsx scripts/qa-env-check.ts",
     "copy-vehicle-images": "node scripts/copy-vehicle-images.mjs"
   },
   "keywords": ["express", "api", "cars"],
